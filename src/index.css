@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════
+   CHRONOS SKIN — Industrial Design System
+   Inspired by Dieter Rams / Braun, Teenage Engineering & Criterion
+   License: Apache-2.0
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --chronos-bg: #0A0A09;
+  --chronos-surface: rgba(18, 18, 16, 0.92);
+  --chronos-border: rgba(244, 241, 234, 0.14);
+  --chronos-hairline: rgba(244, 241, 234, 0.1);
+  --chronos-text: #F4F1EA;
+  --chronos-muted: #8E8B82;
+  --chronos-orange: #FF4F00;
+  --chronos-amber: #FFB800;
+  --chronos-radius: 4px;
+}
+
+/* ── Reset & Mechanical Foundation ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+  background: var(--chronos-bg);
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background: var(--chronos-bg);
+  color: var(--chronos-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ── Precision High-Contrast Dual-Ring Focus (Phosphor Amber) ── */
+:focus-visible {
+  outline: 2px solid #F4F1EA;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(255, 184, 0, 0.85);
+  border-radius: 2px;
+}
+
+/* ── Precision Industrial Scrollbar ── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: #0A0A09;
+}
+::-webkit-scrollbar-thumb {
+  background: #222220;
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8E8B82;
+}
+
+/* ── Tabular Monospace for Chronometry ── */
+.tabular-nums {
+  font-family: 'JetBrains Mono', 'Fira Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  letter-spacing: 0.04em;
+}
+
+/* ── Strict Accessibility: Reduced Motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Archival Film Selection ── */
+::selection {
+  background: rgba(255, 79, 0, 0.4);
+  color: #F4F1EA;
+}
