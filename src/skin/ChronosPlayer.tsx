@@ -27,10 +27,9 @@ import {
   IconClose,
   IconReplay10,
   IconForward10,
-  IconStepBack,
-  IconStepForward,
   IconKeybindings,
   IconSettings,
+  IconQuality,
   IconCaptions,
   IconLoop,
   IconReplay,
@@ -60,11 +59,12 @@ export interface BufferedRange {
   widthPct: number;
 }
 
-export interface QualityLevel {
-  id: number;
+export interface QualityOption {
+  id: number; // -1 = Auto, or 0, 1, 2...
+  name: string;
+  badge: string;
+  specs: string;
   height: number;
-  bitrate: number;
-  label: string;
 }
 
 export interface ChronosPlayerProps {
@@ -75,6 +75,150 @@ export interface ChronosPlayerProps {
   onTimeUpdate?: (time: number) => void;
   onMetadataLoaded?: (meta: VideoMetadata) => void;
   containerWidth?: number;
+}
+
+// Standard Archival Quality Presets
+const DEFAULT_QUALITY_OPTIONS: QualityOption[] = [
+  { id: -1, name: 'AUTO', badge: 'AUTO', specs: 'Adaptive Dynamic Bitrate', height: 1080 },
+  { id: 0, name: '1080p Master', badge: '1080p', specs: '1920×1080 · 4.8 Mbps · Rec.709', height: 1080 },
+  { id: 1, name: '720p HD', badge: '720p', specs: '1280×720 · 2.4 Mbps', height: 720 },
+  { id: 2, name: '480p SD', badge: '480p', specs: '854×480 · 1.2 Mbps', height: 480 },
+  { id: 3, name: '360p Proxy', badge: '360p', specs: '640×360 · 650 kbps', height: 360 },
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  Tactile Hardware Rotary Velocity Wheel Component
+//  Knurled cylindrical thumbwheel with wheel scroll & drag
+// ═══════════════════════════════════════════════════════════════
+interface HardwareVelocityWheelProps {
+  playbackRate: number;
+  onRateChange: (rate: number) => void;
+}
+
+function HardwareVelocityWheel({ playbackRate, onRateChange }: HardwareVelocityWheelProps) {
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const startRate = useRef(playbackRate);
+
+  // Ribs offset in pixels: shifts knurling ribs proportionally
+  const ribsOffset = Math.round((playbackRate - 1.0) * 160);
+
+  // Scroll wheel on the rotary drum
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const delta = e.deltaY < 0 ? 0.05 : -0.05;
+    const next = Math.max(0.25, Math.min(3.0, Math.round((playbackRate + delta) * 20) / 20));
+    onRateChange(next);
+  };
+
+  // Pointer drag on the rotary drum
+  const handlePointerDown = (e: React.PointerEvent) => {
+    isDragging.current = true;
+    startX.current = e.clientX;
+    startRate.current = playbackRate;
+    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+
+    const onPointerMove = (moveEv: PointerEvent) => {
+      if (!isDragging.current) return;
+      const dx = moveEv.clientX - startX.current;
+      const deltaRate = dx / 160;
+      const next = Math.max(0.25, Math.min(3.0, Math.round((startRate.current + deltaRate) * 20) / 20));
+      onRateChange(next);
+    };
+
+    const onPointerUp = () => {
+      isDragging.current = false;
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+    };
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+  };
+
+  const nudge = (delta: number) => {
+    const next = Math.max(0.25, Math.min(3.0, Math.round((playbackRate + delta) * 20) / 20));
+    onRateChange(next);
+  };
+
+  return (
+    <div className="chronos-rotary-wheel-container">
+      <div className="chronos-rotary-header">
+        <span className="chronos-rotary-label">ROTARY VELOCITY DRUM</span>
+        <div className="chronos-rotary-controls">
+          <button
+            type="button"
+            className="chronos-rotary-nudge-btn"
+            onClick={() => nudge(-0.05)}
+            title="Step down 0.05x"
+            aria-label="Decrease velocity"
+          >
+            −
+          </button>
+          <span className="chronos-rotary-value tabular-nums">
+            {playbackRate.toFixed(2)}×
+          </span>
+          <button
+            type="button"
+            className="chronos-rotary-nudge-btn"
+            onClick={() => nudge(0.05)}
+            title="Step up 0.05x"
+            aria-label="Increase velocity"
+          >
+            +
+          </button>
+        </div>
+      </div>
+
+      {/* 3D Knurled Cylindrical Drum (Wheel Scroll + Drag Supported) */}
+      <div
+        className="chronos-rotary-drum"
+        role="slider"
+        aria-label="Tactile playback velocity jog wheel"
+        aria-valuemin={0.25}
+        aria-valuemax={3.0}
+        aria-valuenow={playbackRate}
+        aria-valuetext={`${playbackRate.toFixed(2)}x playback velocity`}
+        tabIndex={0}
+        onWheel={handleWheel}
+        onPointerDown={handlePointerDown}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            nudge(-0.05);
+          }
+          if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            nudge(0.05);
+          }
+        }}
+      >
+        {/* Moving Knurled Graduation Ribs */}
+        <div
+          className="chronos-rotary-ribs"
+          style={{ transform: `translateX(${ribsOffset}px)` }}
+        />
+
+        {/* Center Optical Hairline Needle with Arrow Reticles */}
+        <div className="chronos-rotary-needle" aria-hidden="true" />
+      </div>
+
+      {/* Preset Detent Buttons */}
+      <div className="chronos-rotary-presets">
+        {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((r) => (
+          <button
+            key={r}
+            type="button"
+            className={`chronos-rotary-preset-btn${playbackRate === r ? ' active' : ''}`}
+            onClick={() => onRateChange(r)}
+          >
+            {r === 1.0 ? '1.0×' : `${r}×`}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -96,6 +240,8 @@ function ChronosSkinInternal({
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hlsRef = useRef<any>(null);
 
+  const qualityBtnRef = useRef<HTMLButtonElement>(null);
+  const speedBtnRef = useRef<HTMLButtonElement>(null);
   const cfgBtnRef = useRef<HTMLButtonElement>(null);
   const indexBtnRef = useRef<HTMLButtonElement>(null);
   const keysBtnRef = useRef<HTMLButtonElement>(null);
@@ -119,12 +265,13 @@ function ChronosSkinInternal({
   const [loopEnabled, setLoopEnabled] = useState(false);
   const [captionsEnabled, setCaptionsEnabled] = useState(false);
 
-  // HLS Stream Dynamic Levels & Tracks
-  const [qualityLevels, setQualityLevels] = useState<QualityLevel[]>([]);
+  // Quality & Resolution Levels State
+  const [qualityOptions, setQualityOptions] = useState<QualityOption[]>(DEFAULT_QUALITY_OPTIONS);
   const [currentQuality, setCurrentQuality] = useState<number>(-1); // -1 = Auto
   const [audioTracksCount, setAudioTracksCount] = useState(1);
 
   // Popover States
+  const [qualityMenuOpen, setQualityMenuOpen] = useState(false);
   const [cfgMenuOpen, setCfgMenuOpen] = useState(false);
   const [indexMenuOpen, setIndexMenuOpen] = useState(false);
   const [keysModalOpen, setKeysModalOpen] = useState(false);
@@ -158,6 +305,18 @@ function ChronosSkinInternal({
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, [containerWidth]);
+
+  // Current Quality Label displayed on the dock
+  const currentQualityLabel = useMemo(() => {
+    const match = qualityOptions.find((q) => q.id === currentQuality);
+    if (!match || match.id === -1) {
+      // If Auto, show AUTO or detected resolution if known
+      const video = videoRef.current;
+      const h = video?.videoHeight;
+      return h && h >= 1080 ? 'AUTO · 1080p' : h && h >= 720 ? 'AUTO · 720p' : 'AUTO';
+    }
+    return match.badge;
+  }, [qualityOptions, currentQuality]);
 
   // ── Multi-Buffered Ranges Update Helper ───────────────────────
   const updateBufferedRanges = useCallback(() => {
@@ -212,13 +371,17 @@ function ChronosSkinInternal({
 
           hls.on(Hls.Events.MANIFEST_PARSED, (_: any, data: any) => {
             if (data.levels && data.levels.length > 0) {
-              const lvls: QualityLevel[] = data.levels.map((lvl: any, idx: number) => ({
-                id: idx,
-                height: lvl.height || 720,
-                bitrate: lvl.bitrate || 0,
-                label: `${lvl.height || 720}p (${Math.round((lvl.bitrate || 0) / 1000)}k)`,
-              }));
-              setQualityLevels(lvls);
+              const opts: QualityOption[] = [
+                { id: -1, name: 'AUTO', badge: 'AUTO', specs: 'Adaptive Dynamic Bitrate', height: 1080 },
+                ...data.levels.map((lvl: any, idx: number) => ({
+                  id: idx,
+                  name: `${lvl.height || 720}p`,
+                  badge: `${lvl.height || 720}p`,
+                  specs: `${lvl.width || 1280}×${lvl.height || 720} · ${Math.round((lvl.bitrate || 0) / 1000)} kbps`,
+                  height: lvl.height || 720,
+                })),
+              ];
+              setQualityOptions(opts);
             }
             if (hls.audioTracks && hls.audioTracks.length > 0) {
               setAudioTracksCount(hls.audioTracks.length);
@@ -409,7 +572,7 @@ function ChronosSkinInternal({
     [seek]
   );
 
-  // Frame-accurate step (SMPTE 24 fps)
+  // Keyboard step (SMPTE 24 fps)
   const stepFrame = useCallback(
     (frameDelta: number, fps = 24) => {
       const video = videoRef.current;
@@ -450,11 +613,36 @@ function ChronosSkinInternal({
     setPlaybackRate(rate);
   }, []);
 
-  const cycleSpeed = useCallback(() => {
-    const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2];
-    const nextIdx = (SPEEDS.indexOf(playbackRate) + 1) % SPEEDS.length;
-    setRate(SPEEDS[nextIdx]);
-  }, [playbackRate, setRate]);
+  // Quick cycle speed through standard presets
+  const cycleSpeed = useCallback(
+    (direction = 1) => {
+      const SPEEDS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
+      const curIdx = SPEEDS.findIndex((s) => Math.abs(s - playbackRate) < 0.05);
+      const nextIdx =
+        curIdx === -1
+          ? 2
+          : (curIdx + direction + SPEEDS.length) % SPEEDS.length;
+      setRate(SPEEDS[nextIdx]);
+    },
+    [playbackRate, setRate]
+  );
+
+  const setQuality = useCallback((levelId: number) => {
+    if (hlsRef.current) {
+      hlsRef.current.currentLevel = levelId;
+    }
+    setCurrentQuality(levelId);
+  }, []);
+
+  // Cycle quality using mouse wheel
+  const cycleQuality = useCallback(
+    (direction: 1 | -1) => {
+      const curIdx = qualityOptions.findIndex((q) => q.id === currentQuality);
+      const nextIdx = (curIdx + direction + qualityOptions.length) % qualityOptions.length;
+      setQuality(qualityOptions[nextIdx].id);
+    },
+    [qualityOptions, currentQuality, setQuality]
+  );
 
   const toggleLoop = useCallback(() => {
     const video = videoRef.current;
@@ -473,13 +661,6 @@ function ChronosSkinInternal({
       setCaptionsEnabled(next);
     }
   }, [captionsEnabled]);
-
-  const setQuality = useCallback((levelId: number) => {
-    if (hlsRef.current) {
-      hlsRef.current.currentLevel = levelId;
-      setCurrentQuality(levelId);
-    }
-  }, []);
 
   const togglePiP = useCallback(async () => {
     const video = videoRef.current;
@@ -608,6 +789,11 @@ function ChronosSkinInternal({
             keysBtnRef.current?.focus();
             break;
           }
+          if (qualityMenuOpen) {
+            setQualityMenuOpen(false);
+            qualityBtnRef.current?.focus();
+            break;
+          }
           if (cfgMenuOpen) {
             setCfgMenuOpen(false);
             cfgBtnRef.current?.focus();
@@ -633,6 +819,7 @@ function ChronosSkinInternal({
       toggleCaptions,
       toggleLoop,
       keysModalOpen,
+      qualityMenuOpen,
       cfgMenuOpen,
       indexMenuOpen,
       resetIdle,
@@ -915,7 +1102,7 @@ function ChronosSkinInternal({
 
         {/* ── Machined Button Cells Deck ── */}
         <div className="chronos-cells-deck">
-          {/* CELL 1: Transport & Frame Stepping */}
+          {/* CELL 1: Transport (-1F / +1F removed as requested; clean shuttle) */}
           <div className="chronos-cell">
             <button
               type="button"
@@ -925,28 +1112,6 @@ function ChronosSkinInternal({
               aria-pressed={playing}
             >
               {playing ? <IconPause size={16} /> : <IconPlay size={16} />}
-            </button>
-
-            <button
-              type="button"
-              className="chronos-step-btn"
-              onClick={() => stepFrame(-1)}
-              aria-label="Step back 1 frame (-1F)"
-              title="Step -1 frame (24 fps)"
-            >
-              <IconStepBack size={12} />
-              <span style={{ marginLeft: 2 }}>-1F</span>
-            </button>
-
-            <button
-              type="button"
-              className="chronos-step-btn"
-              onClick={() => stepFrame(1)}
-              aria-label="Step forward 1 frame (+1F)"
-              title="Step +1 frame (24 fps)"
-            >
-              <span style={{ marginRight: 2 }}>+1F</span>
-              <IconStepForward size={12} />
             </button>
 
             {!isMobile && (
@@ -1059,20 +1224,113 @@ function ChronosSkinInternal({
             </div>
           </div>
 
-          {/* CELL 4: Hardware Auxiliary & Mode Triggers */}
+          {/* CELL 4: Quality Settings, Velocity Wheel, Auxiliary Triggers */}
           <div className="chronos-cell">
-            {/* Speed Quick Cycle Button */}
+            {/* 1. Quality Settings Selector Button [1080p HD] */}
+            <div style={{ position: 'relative' }}>
+              <button
+                ref={qualityBtnRef}
+                type="button"
+                className={`chronos-hw-btn${qualityMenuOpen ? ' active' : ''}`}
+                onClick={() => {
+                  setQualityMenuOpen((o) => !o);
+                  setCfgMenuOpen(false);
+                  setIndexMenuOpen(false);
+                }}
+                onWheel={(e) => {
+                  e.preventDefault();
+                  cycleQuality(e.deltaY > 0 ? 1 : -1);
+                }}
+                aria-label={`Resolution Conform: ${currentQualityLabel}. Click to open menu or scroll mouse wheel to cycle`}
+                title="Click to open Quality menu or scroll mouse wheel to cycle"
+                aria-expanded={qualityMenuOpen}
+              >
+                <IconQuality size={13} />
+                <span style={{ marginLeft: 4, fontWeight: 700 }}>
+                  [{currentQualityLabel}]
+                </span>
+              </button>
+
+              {qualityMenuOpen && (
+                <div
+                  className="chronos-popover"
+                  role="menu"
+                  aria-label="Quality and Resolution Conform"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="chronos-popover-header">
+                    <span>Raster &amp; Quality Conform</span>
+                    <button
+                      type="button"
+                      onClick={() => setQualityMenuOpen(false)}
+                      style={{ background: 'none', border: 'none', color: '#8E8B82', cursor: 'pointer' }}
+                      aria-label="Close quality menu"
+                    >
+                      <IconClose size={12} />
+                    </button>
+                  </div>
+
+                  <div
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: 9.5,
+                      color: '#FF5A1F',
+                      fontFamily: 'JetBrains Mono',
+                      background: 'rgba(255, 90, 31, 0.08)',
+                      borderRadius: 2,
+                      marginBottom: 4,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                    }}
+                  >
+                    <span>[ WHEEL OVER BUTTON TO QUICK-CYCLE ]</span>
+                  </div>
+
+                  {qualityOptions.map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={currentQuality === opt.id}
+                      className={`chronos-popover-item${currentQuality === opt.id ? ' active' : ''}`}
+                      onClick={() => {
+                        setQuality(opt.id);
+                        setQualityMenuOpen(false);
+                      }}
+                    >
+                      <div>
+                        <span style={{ fontWeight: 700, marginRight: 8 }}>{opt.name}</span>
+                        <span style={{ fontSize: 10, color: '#8E8B82' }}>{opt.specs}</span>
+                      </div>
+                      {currentQuality === opt.id && (
+                        <span style={{ color: '#FF5A1F', fontSize: 10, fontFamily: 'JetBrains Mono', fontWeight: 700 }}>
+                          ● ACTIVE
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* 2. Speed Quick Cycle Button (Also responds to Mouse Wheel) */}
             <button
+              ref={speedBtnRef}
               type="button"
               className="chronos-hw-btn"
-              onClick={cycleSpeed}
-              aria-label={`Playback speed: ${playbackRate}x. Click to cycle`}
-              title="Click to cycle playback speed"
+              onClick={() => cycleSpeed(1)}
+              onWheel={(e) => {
+                e.preventDefault();
+                cycleSpeed(e.deltaY > 0 ? -1 : 1);
+              }}
+              aria-label={`Playback speed: ${playbackRate}x. Click to cycle or scroll mouse wheel to adjust`}
+              title="Click to cycle or scroll mouse wheel to adjust speed"
             >
-              [{playbackRate === 1 ? '1.0×' : `${playbackRate}×`}]
+              [{playbackRate === 1 ? '1.0×' : `${playbackRate.toFixed(2).replace(/\.00$/, '')}×`}]
             </button>
 
-            {/* Chapters Index Drawer */}
+            {/* 3. Chapters Index Drawer */}
             <div style={{ position: 'relative' }}>
               <button
                 ref={indexBtnRef}
@@ -1080,6 +1338,7 @@ function ChronosSkinInternal({
                 className={`chronos-hw-btn${indexMenuOpen ? ' active' : ''}`}
                 onClick={() => {
                   setIndexMenuOpen((o) => !o);
+                  setQualityMenuOpen(false);
                   setCfgMenuOpen(false);
                 }}
                 aria-label="Chapters index menu"
@@ -1139,7 +1398,7 @@ function ChronosSkinInternal({
               )}
             </div>
 
-            {/* Industrial Settings Menu [CFG] */}
+            {/* 4. Industrial Settings Menu [CFG] with Hardware Rotary Wheel */}
             <div style={{ position: 'relative' }}>
               <button
                 ref={cfgBtnRef}
@@ -1147,6 +1406,7 @@ function ChronosSkinInternal({
                 className={`chronos-hw-btn${cfgMenuOpen ? ' active' : ''}`}
                 onClick={() => {
                   setCfgMenuOpen((o) => !o);
+                  setQualityMenuOpen(false);
                   setIndexMenuOpen(false);
                 }}
                 aria-label="Industrial configuration menu"
@@ -1175,55 +1435,31 @@ function ChronosSkinInternal({
                     </button>
                   </div>
 
-                  {/* Playback Speed Setting */}
+                  {/* ── TACTILE ROTARY VELOCITY WHEEL (Image 2 Wheel Overhaul) ── */}
+                  <HardwareVelocityWheel
+                    playbackRate={playbackRate}
+                    onRateChange={setRate}
+                  />
+
+                  {/* Quality Settings in Menu */}
                   <div style={{ padding: '6px 8px', borderBottom: '1px solid rgba(244,241,234,0.06)' }}>
-                    <div style={{ fontSize: 10, color: '#8E8B82', marginBottom: 4, fontFamily: 'JetBrains Mono' }}>
-                      PLAYBACK VELOCITY
+                    <div style={{ fontSize: 9.5, color: '#8E8B82', marginBottom: 4, fontFamily: 'JetBrains Mono' }}>
+                      RESOLUTION CONFORM
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 3 }}>
-                      {[0.5, 0.75, 1, 1.25, 1.5, 2].map((r) => (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                      {qualityOptions.map((opt) => (
                         <button
-                          key={r}
+                          key={opt.id}
                           type="button"
-                          className={`chronos-hw-btn${playbackRate === r ? ' active' : ''}`}
-                          style={{ minWidth: 'auto', height: 26, fontSize: 10, padding: 0 }}
-                          onClick={() => setRate(r)}
+                          className={`chronos-hw-btn${currentQuality === opt.id ? ' active' : ''}`}
+                          style={{ minWidth: 'auto', height: 24, fontSize: 9.5, padding: '0 6px' }}
+                          onClick={() => setQuality(opt.id)}
                         >
-                          {r}x
+                          {opt.badge}
                         </button>
                       ))}
                     </div>
                   </div>
-
-                  {/* Video Quality (HLS Levels) */}
-                  {qualityLevels.length > 0 && (
-                    <div style={{ padding: '6px 8px', borderBottom: '1px solid rgba(244,241,234,0.06)' }}>
-                      <div style={{ fontSize: 10, color: '#8E8B82', marginBottom: 4, fontFamily: 'JetBrains Mono' }}>
-                        RESOLUTION CONFORM
-                      </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                        <button
-                          type="button"
-                          className={`chronos-hw-btn${currentQuality === -1 ? ' active' : ''}`}
-                          style={{ minWidth: 'auto', height: 26, fontSize: 10, padding: '0 6px' }}
-                          onClick={() => setQuality(-1)}
-                        >
-                          AUTO
-                        </button>
-                        {qualityLevels.map((lvl) => (
-                          <button
-                            key={lvl.id}
-                            type="button"
-                            className={`chronos-hw-btn${currentQuality === lvl.id ? ' active' : ''}`}
-                            style={{ minWidth: 'auto', height: 26, fontSize: 10, padding: '0 6px' }}
-                            onClick={() => setQuality(lvl.id)}
-                          >
-                            {lvl.height}p
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
 
                   {/* Subtitles / Captions Toggle */}
                   <button
@@ -1298,7 +1534,7 @@ function ChronosSkinInternal({
               )}
             </div>
 
-            {/* Fullscreen Toggle */}
+            {/* 5. Fullscreen Toggle */}
             <button
               type="button"
               className="chronos-hw-btn"
@@ -1369,6 +1605,7 @@ function ChronosSkinInternal({
                 ['← / →', 'Seek −5s / +5s (Hold Shift for −10s / +10s)'],
                 [', / . (< / >)', 'Precision single-frame step (−1F / +1F @ 24fps)'],
                 ['↑ / ↓', 'Volume increment / decrement (10% step)'],
+                ['Mouse Wheel over [Speed] / [Quality]', 'Direct rotary adjustment of velocity & resolution'],
                 ['M', 'Instant audio mute toggle'],
                 ['F', 'Fullscreen hardware display toggle'],
                 ['C', 'Toggle WebVTT Subtitles / Captions [CC]'],

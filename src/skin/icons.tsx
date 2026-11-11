@@ -157,6 +157,31 @@ export function IconSettings({ className = '', size = 16 }: IconProps) {
   );
 }
 
+// ── Quality / Resolution Conform [HD / QUAL] ──────────────────
+export function IconQuality({ className = '', size = 16 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className={className}>
+      <rect x="2.5" y="4.5" width="15" height="11" rx="1" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M6 8V12M6 10H8.5M8.5 8V12" stroke="currentColor" strokeWidth="1.25" strokeLinecap="square" />
+      <path d="M11.5 8V12H13C14 12 14.5 11.2 14.5 10C14.5 8.8 14 8 13 8H11.5Z" stroke="currentColor" strokeWidth="1.25" strokeLinecap="square" />
+    </svg>
+  );
+}
+
+// ── Rotary Jog Wheel / Thumbwheel ─────────────────────────────
+export function IconDial({ className = '', size = 16 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className={className}>
+      <circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.5" />
+      <circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="1.2" />
+      <line x1="10" y1="3" x2="10" y2="5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" />
+      <line x1="17" y1="10" x2="15" y2="10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" />
+      <line x1="10" y1="17" x2="10" y2="15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" />
+      <line x1="3" y1="10" x2="5" y2="10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" />
+    </svg>
+  );
+}
+
 // ── Captions / Subtitles [CC] ─────────────────────────────────
 export function IconCaptions({ className = '', size = 16 }: IconProps) {
   return (
