@@ -248,6 +248,7 @@ function ChronosSkinInternal({
 
   // ── Live Video Media State ───────────────────────────────────
   const [playing, setPlaying] = useState(false);
+  const [hasStartedPlayback, setHasStartedPlayback] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(634); // Default 10:34 until loaded
   const [bufferedRanges, setBufferedRanges] = useState<BufferedRange[]>([]);
@@ -342,9 +343,19 @@ function ChronosSkinInternal({
     const video = videoRef.current;
     if (!video) return;
 
+    // Explicitly pause video element and reset playback states
+    try {
+      video.pause();
+    } catch {}
+
+    setPlaying(false);
+    setHasStartedPlayback(false);
+    setCurrentTime(0);
+    setWaiting(false);
+    setEnded(false);
     setHasError(false);
     setErrorMessage('');
-    setEnded(false);
+    setBufferedRanges([]);
 
     if (hlsRef.current) {
       try {
@@ -408,6 +419,8 @@ function ChronosSkinInternal({
   }, [src]);
 
   useEffect(() => {
+    setPlaying(false);
+    setHasStartedPlayback(false);
     attachStream();
     return () => {
       if (hlsRef.current) {
@@ -446,7 +459,13 @@ function ChronosSkinInternal({
     setCurrentTime(video.currentTime);
     onTimeUpdate?.(video.currentTime);
     updateBufferedRanges();
-  }, [onTimeUpdate, updateBufferedRanges]);
+    if (video.paused && playing) {
+      setPlaying(false);
+    } else if (!video.paused && !playing) {
+      setPlaying(true);
+      setHasStartedPlayback(true);
+    }
+  }, [onTimeUpdate, updateBufferedRanges, playing]);
 
   const handleLoadedMetadata = useCallback(() => {
     const video = videoRef.current;
@@ -455,10 +474,12 @@ function ChronosSkinInternal({
     setDuration(dur);
     setEnded(false);
     setHasError(false);
+    setPlaying(!video.paused);
 
     // Auto-cue to specified frame or daylight timestamp
     if (autoCueTime !== undefined && autoCueTime > 0 && video.currentTime < autoCueTime) {
       video.currentTime = autoCueTime;
+      setCurrentTime(autoCueTime);
     }
 
     const width = video.videoWidth || 1920;
@@ -483,6 +504,7 @@ function ChronosSkinInternal({
 
   const handlePlay = useCallback(() => {
     setPlaying(true);
+    setHasStartedPlayback(true);
     setEnded(false);
     setWaiting(false);
   }, []);
@@ -496,9 +518,14 @@ function ChronosSkinInternal({
   const handlePlaying = useCallback(() => {
     setWaiting(false);
     setPlaying(true);
+    setHasStartedPlayback(true);
   }, []);
 
   const handleCanPlay = useCallback(() => {
+    const video = videoRef.current;
+    if (video) {
+      setPlaying(!video.paused);
+    }
     setWaiting(false);
     setCanPlay(true);
     updateBufferedRanges();
@@ -532,13 +559,20 @@ function ChronosSkinInternal({
     if (ended) {
       video.currentTime = 0;
       setEnded(false);
-      video.play().catch(() => {});
+      video.play().then(() => {
+        setPlaying(true);
+        setHasStartedPlayback(true);
+      }).catch(() => {});
       return;
     }
     if (video.paused) {
-      video.play().catch(() => {});
+      video.play().then(() => {
+        setPlaying(true);
+        setHasStartedPlayback(true);
+      }).catch(() => {});
     } else {
       video.pause();
+      setPlaying(false);
     }
     resetIdle();
   }, [ended, resetIdle]);
@@ -548,7 +582,10 @@ function ChronosSkinInternal({
     if (!video) return;
     video.currentTime = 0;
     setEnded(false);
-    video.play().catch(() => {});
+    video.play().then(() => {
+      setPlaying(true);
+      setHasStartedPlayback(true);
+    }).catch(() => {});
     resetIdle();
   }, [resetIdle]);
 
@@ -966,12 +1003,12 @@ function ChronosSkinInternal({
             type="button"
             className="chronos-center-reticle-btn"
             onClick={togglePlay}
-            aria-label={currentTime === 0 ? 'Initialize Playback' : 'Resume Playback'}
+            aria-label={!hasStartedPlayback ? 'Initialize Playback' : 'Resume Playback'}
           >
             <span className="chronos-reticle-bracket">[</span>
             <span className="chronos-reticle-icon">▶</span>
             <span className="chronos-reticle-label">
-              {currentTime <= (autoCueTime || 1.5) ? 'INITIALIZE PLAYBACK' : 'RESUME PLAYBACK'}
+              {!hasStartedPlayback ? 'INITIALIZE PLAYBACK' : 'RESUME PLAYBACK'}
             </span>
             <span className="chronos-reticle-bracket">]</span>
           </button>

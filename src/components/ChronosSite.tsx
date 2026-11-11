@@ -351,6 +351,7 @@ export function ChronosSite() {
             }}
           >
             <ChronosPlayer
+              key={activeReel.id}
               src={activeReel.url}
               poster={activeReel.poster}
               autoCueTime={activeReel.autoCueTime}
@@ -436,6 +437,7 @@ export function ChronosSite() {
 
             {/* ── THE CHRONOS VIDEO.JS v10 PLAYER ── */}
             <ChronosPlayer
+              key={activeReel.id}
               src={activeReel.url}
               poster={activeReel.poster}
               autoCueTime={activeReel.autoCueTime}
