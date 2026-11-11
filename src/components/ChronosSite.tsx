@@ -62,6 +62,18 @@ export function ChronosSite() {
     setVideoMeta(meta);
   }, []);
 
+  // Centralized reel switcher with clean state reset
+  const handleSelectReel = useCallback((reel: ArchiveReel) => {
+    setActiveReel(reel);
+    setPlayerTime(0);
+    setVideoMeta({
+      duration: 0,
+      videoWidth: 0,
+      videoHeight: 0,
+      resolution: 'Scanning Optical Gate...',
+    });
+  }, []);
+
   // Compute dynamic chapters synchronized to current video duration
   const dynamicChapters: DynamicChapter[] = useMemo(() => {
     return getDynamicChapters(videoMeta.duration);
@@ -69,6 +81,7 @@ export function ChronosSite() {
 
   // Active chapter based on playhead position
   const currentChapter = useMemo(() => {
+    if (!dynamicChapters || dynamicChapters.length === 0) return null;
     return (
       [...dynamicChapters].reverse().find((c) => playerTime >= c.time) ||
       dynamicChapters[0]
@@ -322,7 +335,7 @@ export function ChronosSite() {
                   <button
                     key={reel.id}
                     type="button"
-                    onClick={() => setActiveReel(reel)}
+                    onClick={() => handleSelectReel(reel)}
                     style={{
                       background: activeReel.id === reel.id ? 'rgba(255, 90, 31, 0.18)' : '#181916',
                       border: activeReel.id === reel.id ? '1px solid #FF5A1F' : '1px solid #292A25',
@@ -483,7 +496,7 @@ export function ChronosSite() {
                   <button
                     key={reel.id}
                     type="button"
-                    onClick={() => setActiveReel(reel)}
+                    onClick={() => handleSelectReel(reel)}
                     aria-pressed={isSelected}
                     style={{
                       background: isSelected ? '#121210' : '#0E0E0C',
@@ -599,7 +612,7 @@ export function ChronosSite() {
                       color: '#E8E6DF',
                     }}
                   >
-                    Chronometer Index (05 Acts)
+                    Chronometer Index ({String(dynamicChapters.length).padStart(2, '0')} Acts)
                   </span>
                 </div>
                 <span style={{ fontFamily: 'JetBrains Mono', fontSize: 10, color: '#8E8B82' }}>
@@ -618,14 +631,30 @@ export function ChronosSite() {
                     gap: 6,
                   }}
                 >
-                  {dynamicChapters.map((ch) => {
-                    const isActive = currentChapter.time === ch.time;
+                  {dynamicChapters.length === 0 ? (
+                    <li
+                      style={{
+                        padding: '12px 14px',
+                        fontFamily: 'JetBrains Mono, monospace',
+                        fontSize: 11,
+                        color: '#8E8B82',
+                        background: '#121210',
+                        border: '1px solid #1F201C',
+                        borderRadius: 2,
+                        letterSpacing: '0.04em',
+                      }}
+                    >
+                      SYNCHRONIZING CHAPTER INDEX WITH OPTICAL GATE...
+                    </li>
+                  ) : (
+                    dynamicChapters.map((ch) => {
+                      const isActive = currentChapter?.code === ch.code;
 
-                    return (
-                      <li key={ch.time}>
-                        <button
-                          type="button"
-                          onClick={() => handleSeekToChapter(ch.time)}
+                      return (
+                        <li key={ch.code}>
+                          <button
+                            type="button"
+                            onClick={() => handleSeekToChapter(ch.time)}
                           aria-current={isActive ? 'true' : undefined}
                           style={{
                             width: '100%',
@@ -699,9 +728,10 @@ export function ChronosSite() {
                         </button>
                       </li>
                     );
-                  })}
-                </ul>
-              </nav>
+                  })
+                )}
+              </ul>
+            </nav>
             </section>
 
             {/* RIGHT: Technical Preservation Ledger & Design Thinking */}

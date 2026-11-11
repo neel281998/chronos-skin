@@ -121,8 +121,12 @@ export function getDynamicChapters(videoDuration: number): DynamicChapter[] {
     ];
   }
 
-  // If duration is not yet available, return chapters with zeroed timestamps until loadedmetadata
-  const dur = Math.max(0, videoDuration || 0);
+  // If duration is not yet available, return empty array to prevent fake zero-time duplicates
+  if (!videoDuration || isNaN(videoDuration) || videoDuration <= 0) {
+    return [];
+  }
+
+  const dur = videoDuration;
   return CHAPTER_DEFINITIONS.map((def, idx, arr) => {
     const time = Math.round(dur * def.percent);
     const nextDef = arr[idx + 1];

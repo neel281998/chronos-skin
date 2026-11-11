@@ -2,10 +2,11 @@
 //  STUDIO CHRONOS — SMPTE Precision Timecode Utility
 //  Frame-accurate calculations for film & video archival
 //  SMPTE 12M Compliant (NDF & Drop-Frame)
+//  Supported Cadences: 24, 25, 30, 50, 60, 23.976, 29.97 DF, 59.94 DF
 //  License: Apache-2.0
 // ═══════════════════════════════════════════════════════════════
 
-export type SupportedFPS = 23.976 | 24 | 25 | 29.97 | 30 | 60;
+export type SupportedFPS = 23.976 | 24 | 25 | 29.97 | 30 | 50 | 59.94 | 60;
 export type DrumMode = 'smpte' | 'remaining' | 'frames';
 
 const pad2 = (n: number) => String(Math.floor(Math.max(0, n))).padStart(2, '0');
@@ -13,12 +14,11 @@ const pad6 = (n: number) => String(Math.floor(Math.max(0, n))).padStart(6, '0');
 
 /**
  * SMPTE 12M standard drop-frame calculation for 29.97 fps (30000/1001).
- * In 29.97 DF:
  * Frames 00 and 01 are dropped at the start of every minute EXCEPT minutes 00, 10, 20, 30, 40, 50.
- * A 10-minute block has 17,982 frames (18,000 - 18).
- * A regular minute has 1,798 frames (1,800 - 2).
+ * 10-minute block: 17,982 frames (18,000 - 18).
+ * Regular minute: 1,798 frames (1,800 - 2).
  */
-export function framesToSMPTEDropFrame(frameNumber: number): {
+export function framesToSMPTEDropFrame2997(frameNumber: number): {
   hh: number;
   mm: number;
   ss: number;
@@ -46,7 +46,40 @@ export function framesToSMPTEDropFrame(frameNumber: number): {
 }
 
 /**
- * Non-drop-frame calculation with exact frame rollover for 24, 25, 30, 60, and 23.976 fps.
+ * SMPTE 12M standard drop-frame calculation for 59.94 fps (60000/1001).
+ * Frames 00, 01, 02, 03 are dropped at the start of every minute EXCEPT decade minutes.
+ * 10-minute block: 35,964 frames (36,000 - 36).
+ * Regular minute: 3,596 frames (3,600 - 4).
+ */
+export function framesToSMPTEDropFrame5994(frameNumber: number): {
+  hh: number;
+  mm: number;
+  ss: number;
+  ff: number;
+} {
+  const safeFrames = Math.max(0, Math.floor(frameNumber));
+  const framesPer10Minutes = 35964;
+  const framesPerRegularMinute = 3596;
+  const dropFrames = 4;
+
+  const d = Math.floor(safeFrames / framesPer10Minutes);
+  const m = safeFrames % framesPer10Minutes;
+
+  let f = safeFrames + 36 * d;
+  if (m >= 3600) {
+    f += dropFrames * (Math.floor((m - 3600) / framesPerRegularMinute) + 1);
+  }
+
+  const ff = f % 60;
+  const ss = Math.floor(f / 60) % 60;
+  const mm = Math.floor(f / 3600) % 60;
+  const hh = Math.floor(f / 216000);
+
+  return { hh, mm, ss, ff };
+}
+
+/**
+ * Non-drop-frame calculation with exact frame rollover for 24, 25, 30, 50, 60, and 23.976 fps.
  */
 export function framesToSMPTENonDropFrame(
   frameNumber: number,
@@ -74,30 +107,35 @@ export function framesToSMPTENonDropFrame(
 export function secondsToFrameCount(seconds: number, fps: SupportedFPS = 24): number {
   if (!isFinite(seconds) || isNaN(seconds) || seconds < 0) return 0;
   if (fps === 23.976) {
-    // 24000 / 1001 exact
     return Math.floor(seconds * (24000 / 1001) + 0.000001);
   }
   if (fps === 29.97) {
-    // 30000 / 1001 exact
     return Math.floor(seconds * (30000 / 1001) + 0.000001);
+  }
+  if (fps === 59.94) {
+    return Math.floor(seconds * (60000 / 1001) + 0.000001);
   }
   return Math.floor(seconds * fps + 0.000001);
 }
 
 /**
- * Format seconds to SMPTE timecode string (HH:MM:SS:FF or HH:MM:SS;FF)
- * Accurately supports 24, 25, 30, 60, 23.976, and 29.97 (with true SMPTE 12M drop-frame).
+ * Format seconds to SMPTE timecode string (HH:MM:SS:FF or HH:MM:SS;FF).
+ * Accurately supports 24, 25, 30, 50, 60, 23.976, 29.97 DF, and 59.94 DF.
  */
 export function formatSMPTE(seconds: number, fps: SupportedFPS = 24, dropFrame?: boolean): string {
   if (!isFinite(seconds) || isNaN(seconds) || seconds < 0) {
     return '--:--:--:--';
   }
 
-  const isDF = dropFrame !== undefined ? dropFrame : fps === 29.97;
+  const isDF = dropFrame !== undefined ? dropFrame : (fps === 29.97 || fps === 59.94);
   const totalFrames = secondsToFrameCount(seconds, fps);
 
   if (isDF) {
-    const { hh, mm, ss, ff } = framesToSMPTEDropFrame(totalFrames);
+    if (fps === 59.94) {
+      const { hh, mm, ss, ff } = framesToSMPTEDropFrame5994(totalFrames);
+      return `${pad2(hh)}:${pad2(mm)}:${pad2(ss)};${pad2(ff)}`;
+    }
+    const { hh, mm, ss, ff } = framesToSMPTEDropFrame2997(totalFrames);
     return `${pad2(hh)}:${pad2(mm)}:${pad2(ss)};${pad2(ff)}`;
   }
 
@@ -236,7 +274,6 @@ export function formatDrumDisplay(
         isLive: false,
       };
     }
-    // frames mode mobile
     const fCur = secondsToFrameCount(current, fps);
     const fTot = secondsToFrameCount(total, fps);
     return {

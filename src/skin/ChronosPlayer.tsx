@@ -213,6 +213,7 @@ function ChronosSkinInternal({
   const chapters = useMemo(() => getDynamicChapters(duration), [duration]);
 
   const currentChapter = useMemo(() => {
+    if (!chapters || chapters.length === 0) return null;
     return (
       [...chapters].reverse().find((c) => currentTime >= c.time) || chapters[0]
     );
@@ -598,6 +599,14 @@ function ChronosSkinInternal({
   }, []);
 
   const handleWaiting = useCallback(() => setWaiting(true), []);
+  const handleSeeking = useCallback(() => setWaiting(true), []);
+  const handleSeeked = useCallback(() => {
+    setWaiting(false);
+    updateBufferedRanges();
+  }, [updateBufferedRanges]);
+  const handleProgress = useCallback(() => {
+    updateBufferedRanges();
+  }, [updateBufferedRanges]);
   const handlePlaying = useCallback(() => {
     setWaiting(false);
     setPlaying(true);
@@ -1059,6 +1068,9 @@ function ChronosSkinInternal({
         onPlay={handlePlay}
         onPause={handlePause}
         onWaiting={handleWaiting}
+        onSeeking={handleSeeking}
+        onSeeked={handleSeeked}
+        onProgress={handleProgress}
         onPlaying={handlePlaying}
         onCanPlay={handleCanPlay}
         onVolumeChange={handleVolumeChange}
@@ -1155,7 +1167,7 @@ function ChronosSkinInternal({
           </span>
           <span className="chronos-hud-sep">|</span>
           <span className="chronos-hud-chapter">
-            {currentChapter.code} : {currentChapter.title}
+            {currentChapter ? `${currentChapter.code} : ${currentChapter.title}` : 'CALIBRATING'}
           </span>
           <span className="chronos-hud-sep">|</span>
           <span className="chronos-hud-tech">
@@ -1211,7 +1223,7 @@ function ChronosSkinInternal({
           aria-valuetext={
             isLive
               ? 'Continuous Live Transmission'
-              : `${formatSimpleTime(currentTime)} of ${formatSimpleTime(duration)} — ${currentChapter.title}`
+              : `${formatSimpleTime(currentTime)} of ${formatSimpleTime(duration)}${currentChapter ? ` — ${currentChapter.title}` : ''}`
           }
           tabIndex={0}
           onMouseMove={handleRulerMouseMove}
@@ -1238,7 +1250,7 @@ function ChronosSkinInternal({
               if (ch.percent === 0) return null;
               return (
                 <div
-                  key={ch.time}
+                  key={ch.code}
                   className="chronos-ruler-chapter-tick"
                   style={{ left: `${ch.percent * 100}%` }}
                   aria-hidden="true"
@@ -1584,35 +1596,48 @@ function ChronosSkinInternal({
                         <IconClose size={12} />
                       </button>
                     </div>
-                    {chapters.map((ch) => (
-                      <button
-                        key={ch.time}
-                        type="button"
-                        role="menuitem"
-                        className={`chronos-popover-item${currentChapter.time === ch.time ? ' active' : ''}`}
-                        onClick={() => {
-                          seek(ch.time);
-                          setIndexMenuOpen(false);
+                    {chapters.length === 0 ? (
+                      <div
+                        style={{
+                          padding: '10px 12px',
+                          fontSize: 10,
+                          color: '#8E8B82',
+                          fontFamily: 'JetBrains Mono, monospace',
                         }}
                       >
-                        <div>
-                          <span
-                            style={{
-                              color: '#FF5A1F',
-                              fontFamily: 'JetBrains Mono',
-                              fontSize: 10,
-                              marginRight: 6,
-                            }}
-                          >
-                            {ch.code}
+                        CALIBRATING OPTICAL CHAPTERS...
+                      </div>
+                    ) : (
+                      chapters.map((ch) => (
+                        <button
+                          key={ch.code}
+                          type="button"
+                          role="menuitem"
+                          className={`chronos-popover-item${currentChapter?.code === ch.code ? ' active' : ''}`}
+                          onClick={() => {
+                            seek(ch.time);
+                            setIndexMenuOpen(false);
+                          }}
+                        >
+                          <div>
+                            <span
+                              style={{
+                                color: '#FF5A1F',
+                                fontFamily: 'JetBrains Mono',
+                                fontSize: 10,
+                                marginRight: 6,
+                              }}
+                            >
+                              {ch.code}
+                            </span>
+                            <span>{ch.title}</span>
+                          </div>
+                          <span className="tabular-nums" style={{ fontSize: 10, color: '#8E8B82' }}>
+                            {formatSimpleTime(ch.time)}
                           </span>
-                          <span>{ch.title}</span>
-                        </div>
-                        <span className="tabular-nums" style={{ fontSize: 10, color: '#8E8B82' }}>
-                          {formatSimpleTime(ch.time)}
-                        </span>
-                      </button>
-                    ))}
+                        </button>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
