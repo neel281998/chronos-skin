@@ -86,6 +86,24 @@ const DEFAULT_QUALITY_OPTIONS: QualityOption[] = [
   { id: 3, name: '360p Proxy', badge: '360p', specs: '640×360 · 650 kbps', height: 360 },
 ];
 
+export interface SubtitleCue {
+  start: number;
+  end: number;
+  text: string;
+}
+
+const STATIC_CUES: SubtitleCue[] = [
+  { start: 1.0, end: 6.0, text: '[STUDIO CHRONOS: Archival Optical Reference & Calibration Master]' },
+  { start: 7.5, end: 14.0, text: 'Act 01: Inspection of physical 35mm canister seals and preliminary densitometry.' },
+  { start: 15.0, end: 24.0, text: 'Verify sprocket stability across continuous-motion 4K gate transport.' },
+  { start: 25.0, end: 40.0, text: 'Act 02: Calibrating photodiode response and optical dynamic range.' },
+  { start: 42.0, end: 65.0, text: 'Emulsion density: D-max 2.45, D-min 0.08. Color temperature balanced to 6500 Kelvin.' },
+  { start: 70.0, end: 105.0, text: 'Act 03: Automated temporal scratch suppression and particulate matrix isolation.' },
+  { start: 110.0, end: 150.0, text: 'Act 04: Conforming ITU-R BT.709 spectral transfer characteristic.' },
+  { start: 155.0, end: 210.0, text: 'Confirming precision audio synchronization at 48.0 kHz 24-bit PCM.' },
+  { start: 215.0, end: 300.0, text: 'Act 05: Archival preservation master conform complete. Mezzanine IMF package verified.' },
+];
+
 // ═══════════════════════════════════════════════════════════════
 //  Tactile Hardware Rotary Velocity Wheel Component
 //  Knurled cylindrical thumbwheel with wheel scroll & drag
@@ -265,6 +283,7 @@ function ChronosSkinInternal({
   const [playbackRate, setPlaybackRate] = useState(1);
   const [loopEnabled, setLoopEnabled] = useState(false);
   const [captionsEnabled, setCaptionsEnabled] = useState(false);
+  const [activeCueText, setActiveCueText] = useState<string>('');
 
   // Quality & Resolution Levels State
   const [qualityOptions, setQualityOptions] = useState<QualityOption[]>(DEFAULT_QUALITY_OPTIONS);
@@ -692,12 +711,37 @@ function ChronosSkinInternal({
     const video = videoRef.current;
     if (!video) return;
     const tracks = video.textTracks;
+    const next = !captionsEnabled;
     if (tracks && tracks.length > 0) {
-      const next = !captionsEnabled;
-      tracks[0].mode = next ? 'showing' : 'hidden';
-      setCaptionsEnabled(next);
+      tracks[0].mode = next ? 'hidden' : 'disabled';
+    }
+    setCaptionsEnabled(next);
+    if (!next) {
+      setActiveCueText('');
     }
   }, [captionsEnabled]);
+
+  // Sync text track mode and track active cue text
+  useEffect(() => {
+    if (!captionsEnabled) {
+      setActiveCueText('');
+      return;
+    }
+
+    const video = videoRef.current;
+    if (video && video.textTracks && video.textTracks.length > 0) {
+      video.textTracks[0].mode = 'hidden';
+      const cues = video.textTracks[0].activeCues;
+      if (cues && cues.length > 0) {
+        setActiveCueText(Array.from(cues).map((c: any) => c.text).join('\n'));
+        return;
+      }
+    }
+
+    // Direct fallback from parsed archival cues
+    const match = STATIC_CUES.find((c) => currentTime >= c.start && currentTime <= c.end);
+    setActiveCueText(match ? match.text : '');
+  }, [captionsEnabled, currentTime]);
 
   const togglePiP = useCallback(async () => {
     const video = videoRef.current;
@@ -1051,6 +1095,19 @@ function ChronosSkinInternal({
           </button>
         </div>
       </div>
+
+      {/* ── Subtitle / Captions Display (Elevated Above Control Deck) ── */}
+      {captionsEnabled && activeCueText && (
+        <div
+          className={`chronos-captions-overlay${idle && playing ? ' idle' : ''}`}
+          aria-live="polite"
+          aria-atomic="true"
+        >
+          <div className="chronos-captions-cue">
+            {activeCueText}
+          </div>
+        </div>
+      )}
 
       {/* ── Bottom Optical Gradient Scrim ── */}
       <div className={`chronos-bottom-scrim${idle && playing ? ' idle' : ''}`} aria-hidden="true" />
