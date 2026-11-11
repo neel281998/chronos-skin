@@ -104,7 +104,25 @@ export interface DynamicChapter {
 
 /** Compute dynamic chapters synchronized to actual video duration */
 export function getDynamicChapters(videoDuration: number): DynamicChapter[] {
-  const dur = videoDuration > 0 ? videoDuration : 634; // 10:34 fallback
+  // Handle live media (Infinity)
+  if (!isFinite(videoDuration) || videoDuration === Infinity) {
+    return [
+      {
+        index: 1,
+        code: 'LIVE',
+        time: 0,
+        endTime: 0,
+        duration: 0,
+        percent: 0,
+        endPercent: 1,
+        title: 'Continuous Live Transmission',
+        description: 'Real-time archival broadcast stream with indeterminate duration',
+      },
+    ];
+  }
+
+  // If duration is not yet available, return chapters with zeroed timestamps until loadedmetadata
+  const dur = Math.max(0, videoDuration || 0);
   return CHAPTER_DEFINITIONS.map((def, idx, arr) => {
     const time = Math.round(dur * def.percent);
     const nextDef = arr[idx + 1];
@@ -115,7 +133,7 @@ export function getDynamicChapters(videoDuration: number): DynamicChapter[] {
       code: def.code,
       time,
       endTime,
-      duration: Math.max(1, endTime - time),
+      duration: Math.max(0, endTime - time),
       percent: def.percent,
       endPercent,
       title: def.title,

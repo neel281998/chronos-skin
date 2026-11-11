@@ -812,6 +812,12 @@
   cursor: pointer;
   min-height: 44px;
   padding: 10px 4px;
+  border-radius: 2px;
+}
+
+.chronos-meter-ladder:focus-visible {
+  outline: 2px solid #FF5A1F;
+  outline-offset: 2px;
 }
 
 .chronos-meter-bar {
@@ -1190,7 +1196,58 @@
   to { opacity: 1; transform: scale(1); }
 }
 
-/* ── Mobile Responsiveness ────────────────────────────────────── */
+/* ── Container & Viewport Mobile Responsiveness (640px & 375px Safe) ── */
+/* ── Container Responsive State (.is-mobile) ── */
+.chronos-player.is-mobile .chronos-cell.hide-mobile {
+  display: none !important;
+}
+
+.chronos-player.is-mobile .chronos-hud-tech,
+.chronos-player.is-mobile .chronos-hud-chapter {
+  display: none !important;
+}
+
+.chronos-player.is-mobile .chronos-deck {
+  bottom: 6px;
+  left: 6px;
+  right: 6px;
+  padding: 4px 6px 6px;
+  max-width: calc(100% - 12px);
+  box-sizing: border-box;
+}
+
+.chronos-player.is-mobile .chronos-cells-deck {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.chronos-player.is-mobile .chronos-cell {
+  padding: 2px 3px;
+  min-width: 0;
+}
+
+.chronos-player.is-mobile .chronos-hw-btn {
+  min-width: 36px;
+  min-height: 38px;
+  padding: 0 6px;
+  font-size: 10px;
+}
+
+.chronos-player.is-mobile .chronos-hw-btn-play {
+  min-width: 38px;
+}
+
+.chronos-player.is-mobile .chronos-popover {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  max-height: 75vh;
+  overflow-y: auto;
+  z-index: 50;
+}
+
+/* ── Viewport Mobile Responsiveness (640px & 375px Safe) ── */
 @media (max-width: 640px) {
   .chronos-cell.hide-mobile {
     display: none !important;
@@ -1200,22 +1257,38 @@
     display: none !important;
   }
   .chronos-deck {
-    bottom: 8px;
-    left: 8px;
-    right: 8px;
-    padding: 6px 8px 8px;
+    bottom: 6px;
+    left: 6px;
+    right: 6px;
+    padding: 4px 6px 6px;
+    max-width: calc(100% - 12px);
+    box-sizing: border-box;
+  }
+  .chronos-cells-deck {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .chronos-cell {
+    padding: 2px 3px;
+    min-width: 0;
   }
   .chronos-hw-btn {
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0 8px;
+    min-width: 36px;
+    min-height: 38px;
+    padding: 0 6px;
+    font-size: 10px;
+  }
+  .chronos-hw-btn-play {
+    min-width: 38px;
   }
   .chronos-popover {
     position: fixed;
-    bottom: 16px;
-    left: 16px;
-    right: 16px;
-    max-height: 70vh;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    max-height: 75vh;
     overflow-y: auto;
+    z-index: 50;
   }
 }
+

@@ -52,10 +52,10 @@ export function ChronosSite() {
 
   // Live video metadata reported by loadedmetadata
   const [videoMeta, setVideoMeta] = useState<VideoMetadata>({
-    duration: 634,
-    videoWidth: 1920,
-    videoHeight: 1080,
-    resolution: '1920 × 1080 (1080p Master)',
+    duration: 0,
+    videoWidth: 0,
+    videoHeight: 0,
+    resolution: 'Scanning Optical Gate...',
   });
 
   const handleMetadataLoaded = useCallback((meta: VideoMetadata) => {
@@ -749,7 +749,12 @@ export function ChronosSite() {
                     ['Audio Encoding', ARCHIVE_METADATA.audioEncoding],
                     ['Raster Format', videoMeta.resolution],
                     ['Frame Cadence', '24.000 fps (Cine Exact)'],
-                    ['Active Playhead', `${formatDisplaySMPTE(playerTime)} (F#${Math.floor(playerTime * 24)})`],
+                    [
+                      'Active Playhead',
+                      !isFinite(videoMeta.duration) || videoMeta.duration === Infinity
+                        ? `${formatDisplaySMPTE(playerTime)} (LIVE FEED)`
+                        : `${formatDisplaySMPTE(playerTime)} (F#${Math.floor(playerTime * 24)})`,
+                    ],
                     ['Core Engine', ARCHIVE_METADATA.engine],
                   ].map(([k, v]) => (
                     <React.Fragment key={k}>

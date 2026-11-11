@@ -67,6 +67,13 @@ export interface QualityOption {
   height: number;
 }
 
+export interface AudioTrackOption {
+  id: number;
+  name: string;
+  lang?: string;
+  channels?: number;
+}
+
 export interface ChronosPlayerProps {
   src: string;
   poster?: string;
@@ -77,14 +84,38 @@ export interface ChronosPlayerProps {
   containerWidth?: number;
 }
 
-// Standard Archival Quality Presets
-const DEFAULT_QUALITY_OPTIONS: QualityOption[] = [
-  { id: -1, name: 'AUTO', badge: 'AUTO', specs: 'Adaptive Dynamic Bitrate', height: 1080 },
-  { id: 0, name: '1080p Master', badge: '1080p', specs: '1920×1080 · 4.8 Mbps · Rec.709', height: 1080 },
-  { id: 1, name: '720p HD', badge: '720p', specs: '1280×720 · 2.4 Mbps', height: 720 },
-  { id: 2, name: '480p SD', badge: '480p', specs: '854×480 · 1.2 Mbps', height: 480 },
-  { id: 3, name: '360p Proxy', badge: '360p', specs: '640×360 · 650 kbps', height: 360 },
-];
+/**
+ * Format accurate video resolution labels.
+ * Common categories: 2160p (4K UHD), 1440p (QHD), 1080p (Master), 720p (HD), 480p (SD), 360p (Proxy).
+ * Unusual resolutions are shown with their exact dimensions without inaccurate labels.
+ */
+export function formatResolution(width: number, height: number): string {
+  if (!width || !height || width <= 0 || height <= 0) {
+    return 'Scanning Raster...';
+  }
+
+  // Exact standard video resolution matching (including anamorphic aspect ratios)
+  let category = '';
+  if (height === 2160 || (width === 3840 && height >= 1600)) {
+    category = '2160p 4K UHD';
+  } else if (height === 1440 || (width === 2560 && height >= 1080)) {
+    category = '1440p QHD';
+  } else if (height === 1080 || (width === 1920 && height >= 800)) {
+    category = '1080p Master';
+  } else if (height === 720 || (width === 1280 && height >= 530)) {
+    category = '720p HD';
+  } else if (height === 480 || (width === 854 && height >= 360)) {
+    category = '480p SD';
+  } else if (height === 360 || (width === 640 && height >= 270)) {
+    category = '360p Proxy';
+  }
+
+  if (category) {
+    return `${width} × ${height} (${category})`;
+  }
+  // For unusual / non-standard dimensions, display actual dimensions without an inaccurate label
+  return `${width} × ${height}`;
+}
 
 export interface SubtitleCue {
   start: number;
@@ -118,10 +149,8 @@ function HardwareVelocityWheel({ playbackRate, onRateChange }: HardwareVelocityW
   const startX = useRef(0);
   const startRate = useRef(playbackRate);
 
-  // Ribs offset in pixels: shifts knurling ribs proportionally
   const ribsOffset = Math.round((playbackRate - 1.0) * 160);
 
-  // Scroll wheel on the rotary drum
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -130,7 +159,6 @@ function HardwareVelocityWheel({ playbackRate, onRateChange }: HardwareVelocityW
     onRateChange(next);
   };
 
-  // Pointer drag on the rotary drum
   const handlePointerDown = (e: React.PointerEvent) => {
     isDragging.current = true;
     startX.current = e.clientX;
@@ -189,7 +217,6 @@ function HardwareVelocityWheel({ playbackRate, onRateChange }: HardwareVelocityW
         </div>
       </div>
 
-      {/* 3D Knurled Cylindrical Drum (Wheel Scroll + Drag Supported) */}
       <div
         className="chronos-rotary-drum"
         role="slider"
@@ -212,17 +239,13 @@ function HardwareVelocityWheel({ playbackRate, onRateChange }: HardwareVelocityW
           }
         }}
       >
-        {/* Moving Knurled Graduation Ribs */}
         <div
           className="chronos-rotary-ribs"
           style={{ transform: `translateX(${ribsOffset}px)` }}
         />
-
-        {/* Center Optical Hairline Needle with Arrow Reticles */}
         <div className="chronos-rotary-needle" aria-hidden="true" />
       </div>
 
-      {/* Preset Detent Buttons */}
       <div className="chronos-rotary-presets">
         {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0].map((r) => (
           <button
@@ -263,14 +286,15 @@ function ChronosSkinInternal({
   const cfgBtnRef = useRef<HTMLButtonElement>(null);
   const indexBtnRef = useRef<HTMLButtonElement>(null);
   const keysBtnRef = useRef<HTMLButtonElement>(null);
+  const captionsBtnRef = useRef<HTMLButtonElement>(null);
 
   // ── Live Video Media State ───────────────────────────────────
   const [playing, setPlaying] = useState(false);
   const [hasStartedPlayback, setHasStartedPlayback] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(634); // Default 10:34 until loaded
+  const [duration, setDuration] = useState<number>(0);
   const [bufferedRanges, setBufferedRanges] = useState<BufferedRange[]>([]);
-  const [volume, setVolume] = useState(0.8); // 80% default
+  const [volume, setVolume] = useState(0.8);
   const [muted, setMuted] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
   const [waiting, setWaiting] = useState(false);
@@ -284,11 +308,17 @@ function ChronosSkinInternal({
   const [loopEnabled, setLoopEnabled] = useState(false);
   const [captionsEnabled, setCaptionsEnabled] = useState(false);
   const [activeCueText, setActiveCueText] = useState<string>('');
+  const [videoResolution, setVideoResolution] = useState<string>('Scanning Raster...');
 
-  // Quality & Resolution Levels State
-  const [qualityOptions, setQualityOptions] = useState<QualityOption[]>(DEFAULT_QUALITY_OPTIONS);
+  // Genuine Quality & Adaptive Levels State
+  const [qualityOptions, setQualityOptions] = useState<QualityOption[]>([]);
   const [currentQuality, setCurrentQuality] = useState<number>(-1); // -1 = Auto
-  const [audioTracksCount, setAudioTracksCount] = useState(1);
+  const [activeHlsLevel, setActiveHlsLevel] = useState<number>(-1);
+  const [isAdaptiveHls, setIsAdaptiveHls] = useState<boolean>(false);
+
+  // Genuine Audio Tracks State
+  const [audioTracks, setAudioTracks] = useState<AudioTrackOption[]>([]);
+  const [activeAudioTrack, setActiveAudioTrack] = useState<number>(0);
 
   // Popover States
   const [qualityMenuOpen, setQualityMenuOpen] = useState(false);
@@ -304,7 +334,7 @@ function ChronosSkinInternal({
   const [hoverChapter, setHoverChapter] = useState<DynamicChapter | null>(null);
   const [scrubbing, setScrubbing] = useState(false);
 
-  const isLive = !isFinite(duration) || duration === Infinity;
+  const isLive = !isFinite(duration) || duration === Infinity || duration <= 0;
 
   // Dynamic chapters synced to real duration
   const chapters = useMemo(() => getDynamicChapters(duration), [duration]);
@@ -315,28 +345,65 @@ function ChronosSkinInternal({
     );
   }, [chapters, currentTime]);
 
-  // Mobile viewport detection
+  // ── FIX 8: Responsive Container Detection (ResizeObserver) ────
   useEffect(() => {
-    const checkMobile = () => {
-      const width = containerWidth ?? window.innerWidth;
-      setIsMobile(width <= 640);
+    const container = containerRef.current;
+    if (!container) return;
+
+    const updateSize = (w: number) => {
+      setIsMobile(w <= 640);
     };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+
+    if (containerWidth !== undefined) {
+      updateSize(containerWidth);
+      return;
+    }
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const w = entry.contentRect.width;
+          if (w > 0) updateSize(w);
+        }
+      });
+      ro.observe(container);
+      return () => ro.disconnect();
+    } else {
+      const onResize = () => {
+        const rect = container.getBoundingClientRect();
+        if (rect.width > 0) updateSize(rect.width);
+      };
+      window.addEventListener('resize', onResize);
+      onResize();
+      return () => window.removeEventListener('resize', onResize);
+    }
   }, [containerWidth]);
 
-  // Current Quality Label displayed on the dock
+  // ── FIX 3: Genuine Quality Label displayed on the dock ─────────
   const currentQualityLabel = useMemo(() => {
-    const match = qualityOptions.find((q) => q.id === currentQuality);
-    if (!match || match.id === -1) {
-      // If Auto, show AUTO or detected resolution if known
-      const video = videoRef.current;
-      const h = video?.videoHeight;
-      return h && h >= 1080 ? 'AUTO · 1080p' : h && h >= 720 ? 'AUTO · 720p' : 'AUTO';
+    if (isAdaptiveHls) {
+      if (currentQuality === -1) {
+        if (activeHlsLevel >= 0 && qualityOptions[activeHlsLevel + 1]) {
+          return `AUTO · ${qualityOptions[activeHlsLevel + 1].badge}`;
+        }
+        const v = videoRef.current;
+        const h = v?.videoHeight;
+        return h && h > 0 ? `AUTO · ${h}p` : 'AUTO';
+      }
+      const match = qualityOptions.find((q) => q.id === currentQuality);
+      return match ? match.badge : 'AUTO';
     }
-    return match.badge;
-  }, [qualityOptions, currentQuality]);
+
+    if (src.includes('.m3u8')) {
+      const match = qualityOptions.find((q) => q.id === currentQuality);
+      if (match) return match.badge;
+      return 'AUTO';
+    }
+
+    const v = videoRef.current;
+    const h = v?.videoHeight;
+    return h && h > 0 ? `${h}p` : 'SRC';
+  }, [isAdaptiveHls, currentQuality, activeHlsLevel, qualityOptions, src]);
 
   // ── Multi-Buffered Ranges Update Helper ───────────────────────
   const updateBufferedRanges = useCallback(() => {
@@ -357,25 +424,34 @@ function ChronosSkinInternal({
     setBufferedRanges(list);
   }, [duration, isLive]);
 
-  // ── Stream Ingest & HLS Connection ───────────────────────────
+  // ── FIX 9: Stream Ingest, HLS Connection & Reel Lifecycle ─────
   const attachStream = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
 
-    // Explicitly pause video element and reset playback states
     try {
       video.pause();
     } catch {}
 
+    // Complete state reset when switching reels
     setPlaying(false);
     setHasStartedPlayback(false);
     setCurrentTime(0);
+    setDuration(0);
     setWaiting(false);
     setEnded(false);
     setHasError(false);
     setErrorMessage('');
     setBufferedRanges([]);
+    setQualityOptions([]);
+    setCurrentQuality(-1);
+    setActiveHlsLevel(-1);
+    setIsAdaptiveHls(false);
+    setAudioTracks([]);
+    setActiveAudioTrack(0);
+    setActiveCueText('');
 
+    // Safely destroy previous HLS instance
     if (hlsRef.current) {
       try {
         hlsRef.current.destroy();
@@ -383,9 +459,17 @@ function ChronosSkinInternal({
       hlsRef.current = null;
     }
 
+    // Preserve loop state
+    video.loop = loopEnabled;
+
     if (src.includes('.m3u8')) {
-      if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      if (video.canPlayType('application/vnd.apple.mpegurl') && !window.MediaSource) {
+        // Native Apple HLS (Safari iOS/macOS)
         video.src = src;
+        setQualityOptions([
+          { id: -1, name: 'AUTO (Native)', badge: 'AUTO', specs: 'System Adaptive HLS Stream', height: 0 },
+        ]);
+        setIsAdaptiveHls(false);
       } else {
         import('hls.js').then(({ default: Hls }) => {
           if (!Hls.isSupported()) {
@@ -400,52 +484,118 @@ function ChronosSkinInternal({
           hls.attachMedia(video);
 
           hls.on(Hls.Events.MANIFEST_PARSED, (_: any, data: any) => {
+            // FIX 3: Genuine Video Quality Levels
             if (data.levels && data.levels.length > 0) {
-              const opts: QualityOption[] = [
-                { id: -1, name: 'AUTO', badge: 'AUTO', specs: 'Adaptive Dynamic Bitrate', height: 1080 },
-                ...data.levels.map((lvl: any, idx: number) => ({
-                  id: idx,
-                  name: `${lvl.height || 720}p`,
-                  badge: `${lvl.height || 720}p`,
-                  specs: `${lvl.width || 1280}×${lvl.height || 720} · ${Math.round((lvl.bitrate || 0) / 1000)} kbps`,
-                  height: lvl.height || 720,
-                })),
-              ];
-              setQualityOptions(opts);
+              if (data.levels.length > 1) {
+                const opts: QualityOption[] = [
+                  { id: -1, name: 'AUTO', badge: 'AUTO', specs: 'Adaptive Dynamic Bitrate', height: 0 },
+                  ...data.levels.map((lvl: any, idx: number) => {
+                    const h = lvl.height || Math.round((lvl.width || 1280) * (9 / 16));
+                    const w = lvl.width || Math.round(h * (16 / 9));
+                    const kbps = lvl.bitrate ? Math.round(lvl.bitrate / 1000) : 0;
+                    return {
+                      id: idx,
+                      name: `${h}p`,
+                      badge: `${h}p`,
+                      specs: `${w}×${h}${kbps > 0 ? ` · ${kbps.toLocaleString()} kbps` : ''}`,
+                      height: h,
+                    };
+                  }),
+                ];
+                setQualityOptions(opts);
+                setIsAdaptiveHls(true);
+              } else {
+                const lvl = data.levels[0];
+                const h = lvl.height || 1080;
+                const w = lvl.width || 1920;
+                setQualityOptions([
+                  { id: 0, name: `${h}p`, badge: `${h}p`, specs: `${w}×${h} · Single Stream`, height: h },
+                ]);
+                setIsAdaptiveHls(false);
+              }
+            } else {
+              setQualityOptions([]);
+              setIsAdaptiveHls(false);
             }
+
+            // FIX 4: Genuine Audio Tracks Detection
             if (hls.audioTracks && hls.audioTracks.length > 0) {
-              setAudioTracksCount(hls.audioTracks.length);
+              const tracks: AudioTrackOption[] = hls.audioTracks.map((t: any, idx: number) => ({
+                id: idx,
+                name: t.name || t.lang || `Track ${idx + 1}`,
+                lang: t.lang,
+                channels: t.channels || 2,
+              }));
+              setAudioTracks(tracks);
+              setActiveAudioTrack(hls.audioTrack);
+            } else {
+              setAudioTracks([]);
             }
+          });
+
+          hls.on(Hls.Events.LEVEL_SWITCHED, (_: any, data: any) => {
+            setActiveHlsLevel(data.level);
+            const v = videoRef.current;
+            if (v && v.videoWidth && v.videoHeight) {
+              const width = v.videoWidth;
+              const height = v.videoHeight;
+              const resStr = formatResolution(width, height);
+              setVideoResolution(resStr);
+              onMetadataLoaded?.({
+                duration: v.duration || 0,
+                videoWidth: width,
+                videoHeight: height,
+                resolution: resStr,
+              });
+            }
+          });
+
+          hls.on(Hls.Events.AUDIO_TRACKS_UPDATED, (_: any, data: any) => {
+            if (data.audioTracks && data.audioTracks.length > 0) {
+              const tracks: AudioTrackOption[] = data.audioTracks.map((t: any, idx: number) => ({
+                id: idx,
+                name: t.name || t.lang || `Track ${idx + 1}`,
+                lang: t.lang,
+                channels: t.channels || 2,
+              }));
+              setAudioTracks(tracks);
+              setActiveAudioTrack(hls.audioTrack);
+            }
+          });
+
+          hls.on(Hls.Events.AUDIO_TRACK_SWITCHED, (_: any, data: any) => {
+            setActiveAudioTrack(data.id);
           });
 
           hls.on(Hls.Events.ERROR, (_: any, errorData: any) => {
             if (errorData.fatal) {
               console.warn('[Chronos] HLS fatal playback error:', errorData.type);
               setHasError(true);
-              setErrorMessage(`Stream network error: ${errorData.details}`);
+              setErrorMessage(`Stream network error: ${errorData.details || errorData.type}`);
             }
           });
 
           hlsRef.current = hls;
         }).catch((err) => {
           video.src = src;
-          console.warn('[Chronos] HLS load fallback:', err);
+          console.warn('[Chronos] HLS fallback load:', err);
         });
       }
     } else {
+      // Ordinary MP4 file
       video.src = src;
+      setIsAdaptiveHls(false);
     }
-  }, [src]);
+  }, [src, loopEnabled, onMetadataLoaded]);
 
   useEffect(() => {
-    setPlaying(false);
-    setHasStartedPlayback(false);
     attachStream();
     return () => {
       if (hlsRef.current) {
         try {
           hlsRef.current.destroy();
         } catch {}
+        hlsRef.current = null;
       }
     };
   }, [attachStream]);
@@ -471,7 +621,7 @@ function ChronosSkinInternal({
     };
   }, [playing]);
 
-  // ── Video Events Synchronization ──────────────────────────────
+  // ── FIX 1 & 7: Accurate Video Metadata & Duration Handlers ────
   const handleTimeUpdate = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -489,7 +639,11 @@ function ChronosSkinInternal({
   const handleLoadedMetadata = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-    const dur = video.duration || 634;
+
+    // FIX 7: Genuine duration handling (never hardcode 634)
+    const rawDur = video.duration;
+    const isLiveStream = !isFinite(rawDur) || rawDur === Infinity || isNaN(rawDur);
+    const dur = isLiveStream ? Infinity : rawDur > 0 ? rawDur : 0;
     setDuration(dur);
     setEnded(false);
     setHasError(false);
@@ -497,29 +651,66 @@ function ChronosSkinInternal({
 
     // Auto-cue to specified frame or daylight timestamp
     if (autoCueTime !== undefined && autoCueTime > 0 && video.currentTime < autoCueTime) {
-      video.currentTime = autoCueTime;
-      setCurrentTime(autoCueTime);
+      try {
+        video.currentTime = autoCueTime;
+        setCurrentTime(autoCueTime);
+      } catch {}
     }
 
-    const width = video.videoWidth || 1920;
-    const height = video.videoHeight || 1080;
-    const resolution = `${width} × ${height} (${height >= 1080 ? '1080p Master' : '720p HD'})`;
+    // FIX 1: Genuine resolution detection from real videoWidth & videoHeight
+    const width = video.videoWidth || 0;
+    const height = video.videoHeight || 0;
+    const resStr = formatResolution(width, height);
+    setVideoResolution(resStr);
+
+    if (!src.includes('.m3u8')) {
+      setQualityOptions([
+        {
+          id: 0,
+          name: `${height || 1080}p Direct`,
+          badge: `${height || 1080}p`,
+          specs: `${width || 1920}×${height || 1080} · Progressive Fixed Media`,
+          height: height || 1080,
+        },
+      ]);
+    }
+
     onMetadataLoaded?.({
       duration: dur,
       videoWidth: width,
       videoHeight: height,
-      resolution,
+      resolution: resStr,
     });
+
     updateBufferedRanges();
-  }, [autoCueTime, onMetadataLoaded, updateBufferedRanges]);
+  }, [autoCueTime, src, onMetadataLoaded, updateBufferedRanges]);
 
   const handleDurationChange = useCallback(() => {
     const video = videoRef.current;
-    if (video && video.duration && !isNaN(video.duration)) {
-      setDuration(video.duration);
-      updateBufferedRanges();
-    }
+    if (!video) return;
+    const rawDur = video.duration;
+    const isLiveStream = !isFinite(rawDur) || rawDur === Infinity || isNaN(rawDur);
+    const dur = isLiveStream ? Infinity : rawDur > 0 ? rawDur : 0;
+    setDuration(dur);
+    updateBufferedRanges();
   }, [updateBufferedRanges]);
+
+  const handleVideoResize = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const width = video.videoWidth || 0;
+    const height = video.videoHeight || 0;
+    if (width > 0 && height > 0) {
+      const resStr = formatResolution(width, height);
+      setVideoResolution(resStr);
+      onMetadataLoaded?.({
+        duration: video.duration || 0,
+        videoWidth: width,
+        videoHeight: height,
+        resolution: resStr,
+      });
+    }
+  }, [onMetadataLoaded]);
 
   const handlePlay = useCallback(() => {
     setPlaying(true);
@@ -611,7 +802,7 @@ function ChronosSkinInternal({
   const seek = useCallback(
     (seconds: number) => {
       const video = videoRef.current;
-      if (!video) return;
+      if (!video || !isFinite(duration) || duration <= 0) return;
       video.currentTime = Math.max(0, Math.min(duration, seconds));
       setEnded(false);
       resetIdle();
@@ -628,7 +819,6 @@ function ChronosSkinInternal({
     [seek]
   );
 
-  // Keyboard step (SMPTE 24 fps)
   const stepFrame = useCallback(
     (frameDelta: number, fps = 24) => {
       const video = videoRef.current;
@@ -669,7 +859,6 @@ function ChronosSkinInternal({
     setPlaybackRate(rate);
   }, []);
 
-  // Quick cycle speed through standard presets
   const cycleSpeed = useCallback(
     (direction = 1) => {
       const SPEEDS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
@@ -683,6 +872,7 @@ function ChronosSkinInternal({
     [playbackRate, setRate]
   );
 
+  // FIX 3: Quality Switching synced to HLS
   const setQuality = useCallback((levelId: number) => {
     if (hlsRef.current) {
       hlsRef.current.currentLevel = levelId;
@@ -690,15 +880,23 @@ function ChronosSkinInternal({
     setCurrentQuality(levelId);
   }, []);
 
-  // Cycle quality using mouse wheel
   const cycleQuality = useCallback(
     (direction: 1 | -1) => {
+      if (qualityOptions.length === 0) return;
       const curIdx = qualityOptions.findIndex((q) => q.id === currentQuality);
       const nextIdx = (curIdx + direction + qualityOptions.length) % qualityOptions.length;
       setQuality(qualityOptions[nextIdx].id);
     },
     [qualityOptions, currentQuality, setQuality]
   );
+
+  // FIX 4: Audio Track Switching synced to HLS
+  const setAudioTrack = useCallback((trackId: number) => {
+    if (hlsRef.current && trackId >= 0 && trackId < (hlsRef.current.audioTracks?.length || 0)) {
+      hlsRef.current.audioTrack = trackId;
+    }
+    setActiveAudioTrack(trackId);
+  }, []);
 
   const toggleLoop = useCallback(() => {
     const video = videoRef.current;
@@ -707,21 +905,31 @@ function ChronosSkinInternal({
     setLoopEnabled(video.loop);
   }, []);
 
+  // FIX 6: Dedicated Captions Toggle & Synchronization
   const toggleCaptions = useCallback(() => {
     const video = videoRef.current;
-    if (!video) return;
-    const tracks = video.textTracks;
     const next = !captionsEnabled;
-    if (tracks && tracks.length > 0) {
-      tracks[0].mode = next ? 'hidden' : 'disabled';
-    }
     setCaptionsEnabled(next);
+    if (video && video.textTracks && video.textTracks.length > 0) {
+      for (let i = 0; i < video.textTracks.length; i++) {
+        video.textTracks[i].mode = next ? 'hidden' : 'disabled';
+      }
+    }
     if (!next) {
       setActiveCueText('');
     }
   }, [captionsEnabled]);
 
-  // Sync text track mode and track active cue text
+  // Verify captions.vtt on mount
+  useEffect(() => {
+    fetch('/captions.vtt')
+      .then((res) => {
+        if (!res.ok) console.warn('[Chronos] /captions.vtt load status:', res.status);
+      })
+      .catch((err) => console.warn('[Chronos] /captions.vtt load error:', err));
+  }, []);
+
+  // Synchronize cue text with active video cues (with verified archival static fallback)
   useEffect(() => {
     if (!captionsEnabled) {
       setActiveCueText('');
@@ -730,15 +938,15 @@ function ChronosSkinInternal({
 
     const video = videoRef.current;
     if (video && video.textTracks && video.textTracks.length > 0) {
-      video.textTracks[0].mode = 'hidden';
-      const cues = video.textTracks[0].activeCues;
+      const track = video.textTracks[0];
+      track.mode = 'hidden';
+      const cues = track.activeCues;
       if (cues && cues.length > 0) {
         setActiveCueText(Array.from(cues).map((c: any) => c.text).join('\n'));
         return;
       }
     }
 
-    // Direct fallback from parsed archival cues
     const match = STATIC_CUES.find((c) => currentTime >= c.start && currentTime <= c.end);
     setActiveCueText(match ? match.text : '');
   }, [captionsEnabled, currentTime]);
@@ -767,7 +975,7 @@ function ChronosSkinInternal({
   const handleRulerMouseMove = useCallback(
     (e: React.MouseEvent) => {
       const el = rulerRef.current;
-      if (!el || !duration || isLive) return;
+      if (!el || !isFinite(duration) || duration <= 0) return;
       const rect = el.getBoundingClientRect();
       const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
       const time = pct * duration;
@@ -779,7 +987,7 @@ function ChronosSkinInternal({
 
       if (scrubbing) seek(time);
     },
-    [duration, isLive, chapters, scrubbing, seek]
+    [duration, chapters, scrubbing, seek]
   );
 
   const handleRulerMouseLeave = useCallback(() => {
@@ -791,14 +999,14 @@ function ChronosSkinInternal({
   const handleRulerMouseDown = useCallback(
     (e: React.MouseEvent) => {
       const el = rulerRef.current;
-      if (!el || !duration || isLive) return;
+      if (!el || !isFinite(duration) || duration <= 0) return;
       setScrubbing(true);
       const rect = el.getBoundingClientRect();
       const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
       seek(pct * duration);
       resetIdle();
     },
-    [duration, isLive, seek, resetIdle]
+    [duration, seek, resetIdle]
   );
 
   // ── Keyboard Shortcuts & Focus Return ─────────────────────────
@@ -907,7 +1115,6 @@ function ChronosSkinInternal({
     ]
   );
 
-  // Cycle timecode drum mode: smpte -> remaining -> frames
   const cycleDrumMode = useCallback(() => {
     setDrumMode((m) => (m === 'smpte' ? 'remaining' : m === 'remaining' ? 'frames' : 'smpte'));
   }, []);
@@ -915,10 +1122,10 @@ function ChronosSkinInternal({
   const VolumeIcon =
     muted || volume === 0 ? IconVolumeMute : volume < 0.4 ? IconVolumeLow : IconVolumeHigh;
 
-  const totalPlayedPct = duration ? Math.min(100, (currentTime / duration) * 100) : 0;
+  const totalPlayedPct = !isLive && duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 100;
   const activeVolIndex = muted ? 0 : Math.round(volume * 10);
 
-  // Timecode drum string rendering
+  // SMPTE 12M Precision Drum Calculations
   const drumData = useMemo(() => {
     return formatDrumDisplay(currentTime, duration, drumMode, 24, isMobile);
   }, [currentTime, duration, drumMode, isMobile]);
@@ -931,7 +1138,6 @@ function ChronosSkinInternal({
     return parseSMPTESegments(drumData.totalText);
   }, [drumData.totalText]);
 
-  // Telemetry status
   const telemetryStatus = hasError
     ? { label: 'ERROR', dotClass: 'error', color: '#FF3B30' }
     : waiting && !videoRef.current?.paused
@@ -943,7 +1149,7 @@ function ChronosSkinInternal({
   return (
     <Container
       ref={containerRef}
-      className="chronos-player media-container media-video media-skin"
+      className={`chronos-player media-container media-video media-skin${isMobile ? ' is-mobile' : ''}`}
       data-videojs-v10="true"
       data-skin="chronos"
       data-media-player=""
@@ -953,6 +1159,7 @@ function ChronosSkinInternal({
       data-can-play={canPlay}
       data-waiting={waiting}
       data-fullscreen={fullscreen}
+      data-is-mobile={isMobile ? 'true' : 'false'}
       tabIndex={0}
       role="region"
       aria-label="Chronos Video.js v10 Archival & Cinema Reference Player"
@@ -975,6 +1182,7 @@ function ChronosSkinInternal({
         onTimeUpdate={handleTimeUpdate}
         onDurationChange={handleDurationChange}
         onLoadedMetadata={handleLoadedMetadata}
+        onResize={handleVideoResize}
         onPlay={handlePlay}
         onPause={handlePause}
         onWaiting={handleWaiting}
@@ -1125,9 +1333,13 @@ function ChronosSkinInternal({
           role="slider"
           aria-label="Film-ruler timeline scrubber"
           aria-valuemin={0}
-          aria-valuemax={Math.floor(duration)}
-          aria-valuenow={Math.floor(currentTime)}
-          aria-valuetext={`${formatSimpleTime(currentTime)} of ${formatSimpleTime(duration)} — ${currentChapter.title}`}
+          aria-valuemax={isLive ? 100 : Math.floor(duration)}
+          aria-valuenow={isLive ? 100 : Math.floor(currentTime)}
+          aria-valuetext={
+            isLive
+              ? 'Continuous Live Transmission'
+              : `${formatSimpleTime(currentTime)} of ${formatSimpleTime(duration)} — ${currentChapter.title}`
+          }
           tabIndex={0}
           onMouseMove={handleRulerMouseMove}
           onMouseLeave={handleRulerMouseLeave}
@@ -1148,17 +1360,18 @@ function ChronosSkinInternal({
           <div className="chronos-ruler-ticks" />
 
           {/* Chapter Boundary Ticks */}
-          {chapters.map((ch) => {
-            if (ch.percent === 0) return null;
-            return (
-              <div
-                key={ch.time}
-                className="chronos-ruler-chapter-tick"
-                style={{ left: `${ch.percent * 100}%` }}
-                aria-hidden="true"
-              />
-            );
-          })}
+          {!isLive &&
+            chapters.map((ch) => {
+              if (ch.percent === 0) return null;
+              return (
+                <div
+                  key={ch.time}
+                  className="chronos-ruler-chapter-tick"
+                  style={{ left: `${ch.percent * 100}%` }}
+                  aria-hidden="true"
+                />
+              );
+            })}
 
           {/* Multi-Buffered Segments: 2px #77776F */}
           {bufferedRanges.map((range, idx) => (
@@ -1181,7 +1394,7 @@ function ChronosSkinInternal({
           />
 
           {/* Floating Loupe Tooltip on Hover */}
-          {hoverTime !== null && hoverChapter && (
+          {hoverTime !== null && hoverChapter && !isLive && (
             <div
               className="chronos-loupe"
               style={{ left: `${Math.max(8, Math.min(92, hoverXPercent))}%` }}
@@ -1196,7 +1409,7 @@ function ChronosSkinInternal({
 
         {/* ── Machined Button Cells Deck ── */}
         <div className="chronos-cells-deck">
-          {/* CELL 1: Transport (-1F / +1F removed as requested; clean shuttle) */}
+          {/* CELL 1: Transport */}
           <div className="chronos-cell">
             <button
               type="button"
@@ -1252,14 +1465,12 @@ function ChronosSkinInternal({
                   </>
                 ) : (
                   <>
-                    {/* Current Timecode Segments with Dimmed Leading Hours and Frames */}
                     <span className="chronos-smpte-dim">{currentSegments.hours}</span>
                     <span className="chronos-smpte-bright">{currentSegments.minutesSeconds}</span>
                     <span className="chronos-smpte-dim">{currentSegments.frames}</span>
 
                     <span className="chronos-smpte-sep">/</span>
 
-                    {/* Total Duration Segments */}
                     <span className="chronos-smpte-dim">{totalSegments.hours}</span>
                     <span className="chronos-smpte-dim">{totalSegments.minutesSeconds}</span>
                     <span className="chronos-smpte-dim">{totalSegments.frames}</span>
@@ -1270,7 +1481,7 @@ function ChronosSkinInternal({
             </button>
           </div>
 
-          {/* CELL 3: Decibel / 10-Segment Volume Meter */}
+          {/* CELL 3: Decibel / 10-Segment Accessible LED Volume Meter */}
           <div className="chronos-cell hide-mobile">
             <div className="chronos-meter-cluster">
               <button
@@ -1283,18 +1494,41 @@ function ChronosSkinInternal({
                 <VolumeIcon size={16} />
               </button>
 
-              {/* 10-Segment Discrete LED Ladder */}
+              {/* FIX 2: Fully Accessible LED Volume Slider */}
               <div
                 className="chronos-meter-ladder"
                 role="slider"
-                aria-label="Volume level"
+                tabIndex={0}
+                aria-label="Master audio output volume"
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={Math.round((muted ? 0 : volume) * 100)}
+                aria-valuetext={muted ? 'Audio Muted' : `${Math.round(volume * 100)}% volume`}
                 onClick={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
                   setVol(pct);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    setVol(Math.max(0, volume - 0.1));
+                  } else if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    setVol(Math.min(1, volume + 0.1));
+                  } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    setVol(0);
+                  } else if (e.key === 'End') {
+                    e.preventDefault();
+                    setVol(1);
+                  } else if (e.key === 'PageDown') {
+                    e.preventDefault();
+                    setVol(Math.max(0, volume - 0.2));
+                  } else if (e.key === 'PageUp') {
+                    e.preventDefault();
+                    setVol(Math.min(1, volume + 0.2));
+                  }
                 }}
               >
                 {Array.from({ length: 10 }).map((_, i) => {
@@ -1318,9 +1552,9 @@ function ChronosSkinInternal({
             </div>
           </div>
 
-          {/* CELL 4: Quality Settings, Velocity Wheel, Auxiliary Triggers */}
+          {/* CELL 4: Quality, Speed, Index, Dedicated CC, CFG, Fullscreen */}
           <div className="chronos-cell">
-            {/* 1. Quality Settings Selector Button [1080p HD] */}
+            {/* 1. Genuine Quality Settings Selector Button */}
             <div style={{ position: 'relative' }}>
               <button
                 ref={qualityBtnRef}
@@ -1364,135 +1598,168 @@ function ChronosSkinInternal({
                     </button>
                   </div>
 
-                  <div
-                    style={{
-                      padding: '4px 8px',
-                      fontSize: 9.5,
-                      color: '#FF5A1F',
-                      fontFamily: 'JetBrains Mono',
-                      background: 'rgba(255, 90, 31, 0.08)',
-                      borderRadius: 2,
-                      marginBottom: 4,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 4,
-                    }}
-                  >
-                    <span>[ WHEEL OVER BUTTON TO QUICK-CYCLE ]</span>
-                  </div>
-
-                  {qualityOptions.map((opt) => (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      role="menuitemradio"
-                      aria-checked={currentQuality === opt.id}
-                      className={`chronos-popover-item${currentQuality === opt.id ? ' active' : ''}`}
-                      onClick={() => {
-                        setQuality(opt.id);
-                        setQualityMenuOpen(false);
-                      }}
-                    >
-                      <div>
-                        <span style={{ fontWeight: 700, marginRight: 8 }}>{opt.name}</span>
-                        <span style={{ fontSize: 10, color: '#8E8B82' }}>{opt.specs}</span>
+                  {isAdaptiveHls && qualityOptions.length > 1 ? (
+                    <>
+                      <div
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: 9.5,
+                          color: '#FF5A1F',
+                          fontFamily: 'JetBrains Mono',
+                          background: 'rgba(255, 90, 31, 0.08)',
+                          borderRadius: 2,
+                          marginBottom: 4,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                        }}
+                      >
+                        <span>[ WHEEL OVER BUTTON TO QUICK-CYCLE ]</span>
                       </div>
-                      {currentQuality === opt.id && (
-                        <span style={{ color: '#FF5A1F', fontSize: 10, fontFamily: 'JetBrains Mono', fontWeight: 700 }}>
-                          ● ACTIVE
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
 
-            {/* 2. Speed Quick Cycle Button (Also responds to Mouse Wheel) */}
-            <button
-              ref={speedBtnRef}
-              type="button"
-              className="chronos-hw-btn"
-              onClick={() => cycleSpeed(1)}
-              onWheel={(e) => {
-                e.preventDefault();
-                cycleSpeed(e.deltaY > 0 ? -1 : 1);
-              }}
-              aria-label={`Playback speed: ${playbackRate}x. Click to cycle or scroll mouse wheel to adjust`}
-              title="Click to cycle or scroll mouse wheel to adjust speed"
-            >
-              [{playbackRate === 1 ? '1.0×' : `${playbackRate.toFixed(2).replace(/\.00$/, '')}×`}]
-            </button>
-
-            {/* 3. Chapters Index Drawer */}
-            <div style={{ position: 'relative' }}>
-              <button
-                ref={indexBtnRef}
-                type="button"
-                className={`chronos-hw-btn${indexMenuOpen ? ' active' : ''}`}
-                onClick={() => {
-                  setIndexMenuOpen((o) => !o);
-                  setQualityMenuOpen(false);
-                  setCfgMenuOpen(false);
-                }}
-                aria-label="Chapters index menu"
-                aria-expanded={indexMenuOpen}
-              >
-                [INDEX]
-              </button>
-
-              {indexMenuOpen && (
-                <div
-                  className="chronos-popover"
-                  role="menu"
-                  aria-label="Archive Chapter Index"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="chronos-popover-header">
-                    <span>Archive Index ({chapters.length} Acts)</span>
-                    <button
-                      type="button"
-                      onClick={() => setIndexMenuOpen(false)}
-                      style={{ background: 'none', border: 'none', color: '#8E8B82', cursor: 'pointer' }}
-                      aria-label="Close index menu"
-                    >
-                      <IconClose size={12} />
-                    </button>
-                  </div>
-                  {chapters.map((ch) => (
-                    <button
-                      key={ch.time}
-                      type="button"
-                      role="menuitem"
-                      className={`chronos-popover-item${currentChapter.time === ch.time ? ' active' : ''}`}
-                      onClick={() => {
-                        seek(ch.time);
-                        setIndexMenuOpen(false);
-                      }}
-                    >
-                      <div>
-                        <span
-                          style={{
-                            color: '#FF5A1F',
-                            fontFamily: 'JetBrains Mono',
-                            fontSize: 10,
-                            marginRight: 6,
+                      {qualityOptions.map((opt) => (
+                        <button
+                          key={opt.id}
+                          type="button"
+                          role="menuitemradio"
+                          aria-checked={currentQuality === opt.id}
+                          className={`chronos-popover-item${currentQuality === opt.id ? ' active' : ''}`}
+                          onClick={() => {
+                            setQuality(opt.id);
+                            setQualityMenuOpen(false);
                           }}
                         >
-                          {ch.code}
-                        </span>
-                        <span>{ch.title}</span>
+                          <div>
+                            <span style={{ fontWeight: 700, marginRight: 8 }}>{opt.name}</span>
+                            <span style={{ fontSize: 10, color: '#8E8B82' }}>{opt.specs}</span>
+                          </div>
+                          {currentQuality === opt.id && (
+                            <span style={{ color: '#FF5A1F', fontSize: 10, fontFamily: 'JetBrains Mono', fontWeight: 700 }}>
+                              ● ACTIVE
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </>
+                  ) : (
+                    <div style={{ padding: '8px 10px', fontSize: 11, color: '#8E8B82', lineHeight: 1.5 }}>
+                      <div style={{ color: '#E8E6DF', fontWeight: 600, marginBottom: 4 }}>
+                        {src.includes('.m3u8') ? 'Adaptive Native Stream' : 'Progressive Fixed Media'}
                       </div>
-                      <span className="tabular-nums" style={{ fontSize: 10, color: '#8E8B82' }}>
-                        {formatSimpleTime(ch.time)}
-                      </span>
-                    </button>
-                  ))}
+                      <div>
+                        {src.includes('.m3u8')
+                          ? 'Media is delivered via system adaptive HLS. Quality is dynamically managed by the browser engine.'
+                          : `Single resolution source (${videoRef.current?.videoWidth || 1920}×${videoRef.current?.videoHeight || 1080}). Resolution conform switching is not applicable.`}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* 4. Industrial Settings Menu [CFG] with Hardware Rotary Wheel */}
+            {/* 2. Speed Quick Cycle Button */}
+            {!isMobile && (
+              <button
+                ref={speedBtnRef}
+                type="button"
+                className="chronos-hw-btn"
+                onClick={() => cycleSpeed(1)}
+                onWheel={(e) => {
+                  e.preventDefault();
+                  cycleSpeed(e.deltaY > 0 ? -1 : 1);
+                }}
+                aria-label={`Playback speed: ${playbackRate}x. Click to cycle or scroll mouse wheel to adjust`}
+                title="Click to cycle or scroll mouse wheel to adjust speed"
+              >
+                [{playbackRate === 1 ? '1.0×' : `${playbackRate.toFixed(2).replace(/\.00$/, '')}×`}]
+              </button>
+            )}
+
+            {/* 3. Chapters Index Drawer */}
+            {!isMobile && (
+              <div style={{ position: 'relative' }}>
+                <button
+                  ref={indexBtnRef}
+                  type="button"
+                  className={`chronos-hw-btn${indexMenuOpen ? ' active' : ''}`}
+                  onClick={() => {
+                    setIndexMenuOpen((o) => !o);
+                    setQualityMenuOpen(false);
+                    setCfgMenuOpen(false);
+                  }}
+                  aria-label="Chapters index menu"
+                  aria-expanded={indexMenuOpen}
+                >
+                  [INDEX]
+                </button>
+
+                {indexMenuOpen && (
+                  <div
+                    className="chronos-popover"
+                    role="menu"
+                    aria-label="Archive Chapter Index"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="chronos-popover-header">
+                      <span>Archive Index ({chapters.length} Acts)</span>
+                      <button
+                        type="button"
+                        onClick={() => setIndexMenuOpen(false)}
+                        style={{ background: 'none', border: 'none', color: '#8E8B82', cursor: 'pointer' }}
+                        aria-label="Close index menu"
+                      >
+                        <IconClose size={12} />
+                      </button>
+                    </div>
+                    {chapters.map((ch) => (
+                      <button
+                        key={ch.time}
+                        type="button"
+                        role="menuitem"
+                        className={`chronos-popover-item${currentChapter.time === ch.time ? ' active' : ''}`}
+                        onClick={() => {
+                          seek(ch.time);
+                          setIndexMenuOpen(false);
+                        }}
+                      >
+                        <div>
+                          <span
+                            style={{
+                              color: '#FF5A1F',
+                              fontFamily: 'JetBrains Mono',
+                              fontSize: 10,
+                              marginRight: 6,
+                            }}
+                          >
+                            {ch.code}
+                          </span>
+                          <span>{ch.title}</span>
+                        </div>
+                        <span className="tabular-nums" style={{ fontSize: 10, color: '#8E8B82' }}>
+                          {formatSimpleTime(ch.time)}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 4. FIX 6: Dedicated Subtitles / Captions Button [CC] */}
+            <button
+              ref={captionsBtnRef}
+              type="button"
+              className={`chronos-hw-btn${captionsEnabled ? ' active' : ''}`}
+              onClick={toggleCaptions}
+              aria-label={captionsEnabled ? 'Disable Subtitles [CC]' : 'Enable Subtitles [CC]'}
+              title="Toggle Subtitles / Captions [CC] (C)"
+              aria-pressed={captionsEnabled}
+            >
+              <IconCaptions size={14} />
+              <span style={{ marginLeft: 3, fontWeight: 700 }}>[CC]</span>
+            </button>
+
+            {/* 5. Industrial Settings Menu [CFG] with Hardware Rotary Wheel & Audio Tracks */}
             <div style={{ position: 'relative' }}>
               <button
                 ref={cfgBtnRef}
@@ -1529,30 +1796,67 @@ function ChronosSkinInternal({
                     </button>
                   </div>
 
-                  {/* ── TACTILE ROTARY VELOCITY WHEEL (Image 2 Wheel Overhaul) ── */}
+                  {/* Tactile Rotary Velocity Wheel */}
                   <HardwareVelocityWheel
                     playbackRate={playbackRate}
                     onRateChange={setRate}
                   />
 
                   {/* Quality Settings in Menu */}
+                  {isAdaptiveHls && qualityOptions.length > 1 && (
+                    <div style={{ padding: '6px 8px', borderBottom: '1px solid rgba(244,241,234,0.06)' }}>
+                      <div style={{ fontSize: 9.5, color: '#8E8B82', marginBottom: 4, fontFamily: 'JetBrains Mono' }}>
+                        RESOLUTION CONFORM
+                      </div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                        {qualityOptions.map((opt) => (
+                          <button
+                            key={opt.id}
+                            type="button"
+                            className={`chronos-hw-btn${currentQuality === opt.id ? ' active' : ''}`}
+                            style={{ minWidth: 'auto', height: 24, fontSize: 9.5, padding: '0 6px' }}
+                            onClick={() => setQuality(opt.id)}
+                          >
+                            {opt.badge}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* FIX 4: Genuine Audio Track Selection */}
                   <div style={{ padding: '6px 8px', borderBottom: '1px solid rgba(244,241,234,0.06)' }}>
                     <div style={{ fontSize: 9.5, color: '#8E8B82', marginBottom: 4, fontFamily: 'JetBrains Mono' }}>
-                      RESOLUTION CONFORM
+                      AUDIO MONITOR &amp; TRACKS
                     </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
-                      {qualityOptions.map((opt) => (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          className={`chronos-hw-btn${currentQuality === opt.id ? ' active' : ''}`}
-                          style={{ minWidth: 'auto', height: 24, fontSize: 9.5, padding: '0 6px' }}
-                          onClick={() => setQuality(opt.id)}
-                        >
-                          {opt.badge}
-                        </button>
-                      ))}
-                    </div>
+                    {audioTracks.length > 1 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                        {audioTracks.map((tr) => (
+                          <button
+                            key={tr.id}
+                            type="button"
+                            className={`chronos-popover-item${activeAudioTrack === tr.id ? ' active' : ''}`}
+                            style={{ padding: '4px 6px', fontSize: 10 }}
+                            onClick={() => setAudioTrack(tr.id)}
+                          >
+                            <span>
+                              {tr.name} {tr.lang ? `(${tr.lang.toUpperCase()})` : ''}
+                            </span>
+                            {activeAudioTrack === tr.id && (
+                              <span style={{ color: '#FF5A1F', fontWeight: 700, fontSize: 9.5 }}>
+                                ● ACTIVE
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 10, color: '#E8E6DF', fontFamily: 'JetBrains Mono' }}>
+                        {audioTracks.length === 1
+                          ? `Primary Stereo Track (${audioTracks[0].name})`
+                          : 'Stereo 48.0kHz 24-bit PCM / AAC'}
+                      </div>
+                    )}
                   </div>
 
                   {/* Subtitles / Captions Toggle */}
@@ -1606,29 +1910,11 @@ function ChronosSkinInternal({
                       </span>
                     </button>
                   )}
-
-                  {/* Audio Stream Info */}
-                  <div
-                    style={{
-                      padding: '6px 8px',
-                      fontSize: 10,
-                      color: '#8E8B82',
-                      fontFamily: 'JetBrains Mono',
-                      borderTop: '1px solid rgba(244,241,234,0.06)',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                    }}
-                  >
-                    <span>AUDIO MONITOR</span>
-                    <span style={{ color: '#E8E6DF' }}>
-                      {audioTracksCount > 1 ? `${audioTracksCount} Tracks Available` : 'Stereo 48.0kHz 24-bit'}
-                    </span>
-                  </div>
                 </div>
               )}
             </div>
 
-            {/* 5. Fullscreen Toggle */}
+            {/* 6. Fullscreen Toggle */}
             <button
               type="button"
               className="chronos-hw-btn"
