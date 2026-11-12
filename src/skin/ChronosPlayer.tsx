@@ -381,7 +381,7 @@ function ChronosSkinInternal({
 
     try {
       video.pause();
-    } catch {}
+    } catch { }
 
     // Complete state reset when switching reels
     setPlaying(false);
@@ -405,7 +405,7 @@ function ChronosSkinInternal({
     if (hlsRef.current) {
       try {
         hlsRef.current.destroy();
-      } catch {}
+      } catch { }
       hlsRef.current = null;
     }
 
@@ -544,7 +544,7 @@ function ChronosSkinInternal({
       if (hlsRef.current) {
         try {
           hlsRef.current.destroy();
-        } catch {}
+        } catch { }
         hlsRef.current = null;
       }
     };
@@ -604,7 +604,7 @@ function ChronosSkinInternal({
       try {
         video.currentTime = 0;
         setCurrentTime(0);
-      } catch {}
+      } catch { }
     }
 
     // FIX 1: Genuine resolution detection from real videoWidth & videoHeight
@@ -730,14 +730,14 @@ function ChronosSkinInternal({
       video.play().then(() => {
         setPlaying(true);
         setHasStartedPlayback(true);
-      }).catch(() => {});
+      }).catch(() => { });
       return;
     }
     if (video.paused) {
       video.play().then(() => {
         setPlaying(true);
         setHasStartedPlayback(true);
-      }).catch(() => {});
+      }).catch(() => { });
     } else {
       video.pause();
       setPlaying(false);
@@ -753,7 +753,7 @@ function ChronosSkinInternal({
     video.play().then(() => {
       setPlaying(true);
       setHasStartedPlayback(true);
-    }).catch(() => {});
+    }).catch(() => { });
     resetIdle();
   }, [resetIdle]);
 
@@ -804,9 +804,9 @@ function ChronosSkinInternal({
     const container = containerRef.current;
     if (!container) return;
     if (!document.fullscreenElement) {
-      container.requestFullscreen().catch(() => {});
+      container.requestFullscreen().catch(() => { });
     } else {
-      document.exitFullscreen().catch(() => {});
+      document.exitFullscreen().catch(() => { });
     }
   }, []);
 
@@ -919,7 +919,7 @@ function ChronosSkinInternal({
         await video.requestPictureInPicture();
         setPipActive(true);
       }
-    } catch {}
+    } catch { }
   }, []);
 
   useEffect(() => {
@@ -1100,10 +1100,10 @@ function ChronosSkinInternal({
   const telemetryStatus = hasError
     ? { label: 'ERROR', dotClass: 'error', color: '#FF3B30' }
     : waiting && !videoRef.current?.paused
-    ? { label: 'BUFFERING', dotClass: 'buffering', color: '#E5A52C' }
-    : playing
-    ? { label: 'PLAYING', dotClass: '', color: '#E8E6DF' }
-    : { label: 'STANDBY', dotClass: 'standby', color: '#E5A52C' };
+      ? { label: 'BUFFERING', dotClass: 'buffering', color: '#E5A52C' }
+      : playing
+        ? { label: 'PLAYING', dotClass: '', color: '#E8E6DF' }
+        : { label: 'STANDBY', dotClass: 'standby', color: '#E5A52C' };
 
   return (
     <Container
@@ -1512,9 +1512,8 @@ function ChronosSkinInternal({
                   return (
                     <div
                       key={i}
-                      className={`chronos-meter-bar${isSegActive ? ' active' : ''}${
-                        isWarn ? ' warn' : ''
-                      }${isPeak ? ' peak' : ''}`}
+                      className={`chronos-meter-bar${isSegActive ? ' active' : ''}${isWarn ? ' warn' : ''
+                        }${isPeak ? ' peak' : ''}`}
                     />
                   );
                 })}
@@ -1659,315 +1658,315 @@ function ChronosSkinInternal({
                     aria-label="Player Configuration"
                     onClick={(e) => e.stopPropagation()}
                   >
-                  {/* MAIN SETTINGS MENU */}
-                  {settingsSubmenu === 'main' && (
-                    <>
-                      <div className="chronos-popover-header">
-                        <span>PRECISION SETTINGS</span>
-                        <button
-                          type="button"
-                          onClick={() => setCfgMenuOpen(false)}
-                          style={{ background: 'none', border: 'none', color: '#E8E6DF', cursor: 'pointer', padding: 2 }}
-                          aria-label="Close configuration menu"
-                        >
-                          <IconClose size={13} />
-                        </button>
-                      </div>
+                    {/* MAIN SETTINGS MENU */}
+                    {settingsSubmenu === 'main' && (
+                      <>
+                        <div className="chronos-popover-header">
+                          <span>PRECISION SETTINGS</span>
+                          <button
+                            type="button"
+                            onClick={() => setCfgMenuOpen(false)}
+                            style={{ background: 'none', border: 'none', color: '#E8E6DF', cursor: 'pointer', padding: 2 }}
+                            aria-label="Close configuration menu"
+                          >
+                            <IconClose size={13} />
+                          </button>
+                        </div>
 
-                      {/* Quality / Resolution Submenu Trigger */}
-                      <button
-                        type="button"
-                        className="chronos-popover-item"
-                        onClick={() => setSettingsSubmenu('quality')}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <IconQuality size={14} />
-                          <span style={{ fontSize: 11.5 }}>Quality</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 11, fontFamily: 'JetBrains Mono', color: '#FF9B45', fontWeight: 700 }}>
-                            {qualityOptions.find((q) => q.id === currentQuality)?.badge || 'AUTO'}
-                          </span>
-                          <IconChevronRight size={12} />
-                        </div>
-                      </button>
-
-                      {/* Playback Speed Submenu Trigger */}
-                      <button
-                        type="button"
-                        className="chronos-popover-item"
-                        onClick={() => setSettingsSubmenu('speed')}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <IconSettings size={14} />
-                          <span style={{ fontSize: 11.5 }}>Playback Speed</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 11, fontFamily: 'JetBrains Mono', color: '#FF9B45', fontWeight: 700 }}>
-                            {playbackRate === 1 ? '1.0×' : `${playbackRate}×`}
-                          </span>
-                          <IconChevronRight size={12} />
-                        </div>
-                      </button>
-
-                      {/* Subtitles / Captions Submenu Trigger */}
-                      <button
-                        type="button"
-                        className="chronos-popover-item"
-                        onClick={() => setSettingsSubmenu('captions')}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <IconCaptions size={14} />
-                          <span style={{ fontSize: 11.5 }}>Subtitles / Captions</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 11, fontFamily: 'JetBrains Mono', color: captionsEnabled ? '#FF9B45' : '#8E8B82', fontWeight: 700 }}>
-                            {captionsEnabled ? 'English [CC]' : 'Off'}
-                          </span>
-                          <IconChevronRight size={12} />
-                        </div>
-                      </button>
-
-                      {/* Audio Tracks Submenu Trigger (if multiple) */}
-                      {audioTracks.length > 1 && (
+                        {/* Quality / Resolution Submenu Trigger */}
                         <button
                           type="button"
                           className="chronos-popover-item"
-                          onClick={() => setSettingsSubmenu('audio')}
+                          onClick={() => setSettingsSubmenu('quality')}
                         >
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <IconVolumeHigh size={14} />
-                            <span style={{ fontSize: 11.5 }}>Audio Track</span>
+                            <IconQuality size={14} />
+                            <span style={{ fontSize: 11.5 }}>Quality</span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                            <span style={{ fontSize: 11, fontFamily: 'JetBrains Mono', color: '#E8E6DF' }}>
-                              {audioTracks.find((t) => t.id === activeAudioTrack)?.name || 'Default'}
+                            <span style={{ fontSize: 11, fontFamily: 'JetBrains Mono', color: '#FF9B45', fontWeight: 700 }}>
+                              {qualityOptions.find((q) => q.id === currentQuality)?.badge || 'AUTO'}
                             </span>
                             <IconChevronRight size={12} />
                           </div>
                         </button>
-                      )}
 
-                      {/* Continuous Loop Toggle */}
-                      <button
-                        type="button"
-                        className={`chronos-popover-item${loopEnabled ? ' active' : ''}`}
-                        onClick={toggleLoop}
-                        role="menuitemcheckbox"
-                        aria-checked={loopEnabled}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <IconLoop size={14} />
-                          <span style={{ fontSize: 11.5 }}>Continuous Reel Loop</span>
-                        </div>
-                        <span style={{ fontSize: 11, fontWeight: 700, fontFamily: 'JetBrains Mono', color: loopEnabled ? '#FF9B45' : '#8E8B82' }}>
-                          {loopEnabled ? 'ON' : 'OFF'}
-                        </span>
-                      </button>
-                    </>
-                  )}
-
-                  {/* SUBMENU: QUALITY CONFORM */}
-                  {settingsSubmenu === 'quality' && (
-                    <>
-                      <div className="chronos-popover-header">
+                        {/* Playback Speed Submenu Trigger */}
                         <button
                           type="button"
-                          onClick={() => setSettingsSubmenu('main')}
-                          style={{ background: 'none', border: 'none', color: '#E8E6DF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0, fontSize: 11, fontWeight: 700 }}
+                          className="chronos-popover-item"
+                          onClick={() => setSettingsSubmenu('speed')}
                         >
-                          <IconArrowLeft size={13} />
-                          <span>QUALITY CONFORM</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCfgMenuOpen(false)}
-                          style={{ background: 'none', border: 'none', color: '#8E8B82', cursor: 'pointer', padding: 2 }}
-                        >
-                          <IconClose size={13} />
-                        </button>
-                      </div>
-
-                      {qualityOptions.map((opt) => (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          role="menuitemradio"
-                          aria-checked={currentQuality === opt.id}
-                          className={`chronos-popover-item${currentQuality === opt.id ? ' active' : ''}`}
-                          onClick={() => {
-                            setQuality(opt.id);
-                            setSettingsSubmenu('main');
-                          }}
-                        >
-                          <div>
-                            <span style={{ fontWeight: 700, marginRight: 8, fontSize: 11.5 }}>{opt.name}</span>
-                            <span style={{ fontSize: 10, color: '#8E8B82' }}>{opt.specs}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <IconSettings size={14} />
+                            <span style={{ fontSize: 11.5 }}>Playback Speed</span>
                           </div>
-                          {currentQuality === opt.id && (
-                            <span style={{ color: '#FF5A1F', fontSize: 10, fontFamily: 'JetBrains Mono', fontWeight: 700 }}>
-                              ● ACTIVE
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 11, fontFamily: 'JetBrains Mono', color: '#FF9B45', fontWeight: 700 }}>
+                              {playbackRate === 1 ? '1.0×' : `${playbackRate}×`}
                             </span>
-                          )}
+                            <IconChevronRight size={12} />
+                          </div>
                         </button>
-                      ))}
-                    </>
-                  )}
 
-                  {/* SUBMENU: PLAYBACK SPEED */}
-                  {settingsSubmenu === 'speed' && (
-                    <>
-                      <div className="chronos-popover-header">
+                        {/* Subtitles / Captions Submenu Trigger */}
                         <button
                           type="button"
-                          onClick={() => setSettingsSubmenu('main')}
-                          style={{ background: 'none', border: 'none', color: '#E8E6DF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0, fontSize: 11, fontWeight: 700 }}
+                          className="chronos-popover-item"
+                          onClick={() => setSettingsSubmenu('captions')}
                         >
-                          <IconArrowLeft size={13} />
-                          <span>PLAYBACK SPEED</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <IconCaptions size={14} />
+                            <span style={{ fontSize: 11.5 }}>Subtitles / Captions</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 11, fontFamily: 'JetBrains Mono', color: captionsEnabled ? '#FF9B45' : '#8E8B82', fontWeight: 700 }}>
+                              {captionsEnabled ? 'English [CC]' : 'Off'}
+                            </span>
+                            <IconChevronRight size={12} />
+                          </div>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => setCfgMenuOpen(false)}
-                          style={{ background: 'none', border: 'none', color: '#8E8B82', cursor: 'pointer', padding: 2 }}
-                        >
-                          <IconClose size={13} />
-                        </button>
-                      </div>
 
-                      {PLAYBACK_SPEEDS.map((s) => {
-                        const isCurrent = Math.abs(playbackRate - s) < 0.05;
-                        return (
+                        {/* Audio Tracks Submenu Trigger (if multiple) */}
+                        {audioTracks.length > 1 && (
                           <button
-                            key={s}
+                            type="button"
+                            className="chronos-popover-item"
+                            onClick={() => setSettingsSubmenu('audio')}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <IconVolumeHigh size={14} />
+                              <span style={{ fontSize: 11.5 }}>Audio Track</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <span style={{ fontSize: 11, fontFamily: 'JetBrains Mono', color: '#E8E6DF' }}>
+                                {audioTracks.find((t) => t.id === activeAudioTrack)?.name || 'Default'}
+                              </span>
+                              <IconChevronRight size={12} />
+                            </div>
+                          </button>
+                        )}
+
+                        {/* Continuous Loop Toggle */}
+                        <button
+                          type="button"
+                          className={`chronos-popover-item${loopEnabled ? ' active' : ''}`}
+                          onClick={toggleLoop}
+                          role="menuitemcheckbox"
+                          aria-checked={loopEnabled}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <IconLoop size={14} />
+                            <span style={{ fontSize: 11.5 }}>Continuous Reel Loop</span>
+                          </div>
+                          <span style={{ fontSize: 11, fontWeight: 700, fontFamily: 'JetBrains Mono', color: loopEnabled ? '#FF9B45' : '#8E8B82' }}>
+                            {loopEnabled ? 'ON' : 'OFF'}
+                          </span>
+                        </button>
+                      </>
+                    )}
+
+                    {/* SUBMENU: QUALITY CONFORM */}
+                    {settingsSubmenu === 'quality' && (
+                      <>
+                        <div className="chronos-popover-header">
+                          <button
+                            type="button"
+                            onClick={() => setSettingsSubmenu('main')}
+                            style={{ background: 'none', border: 'none', color: '#E8E6DF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0, fontSize: 11, fontWeight: 700 }}
+                          >
+                            <IconArrowLeft size={13} />
+                            <span>QUALITY CONFORM</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCfgMenuOpen(false)}
+                            style={{ background: 'none', border: 'none', color: '#8E8B82', cursor: 'pointer', padding: 2 }}
+                          >
+                            <IconClose size={13} />
+                          </button>
+                        </div>
+
+                        {qualityOptions.map((opt) => (
+                          <button
+                            key={opt.id}
                             type="button"
                             role="menuitemradio"
-                            aria-checked={isCurrent}
-                            className={`chronos-popover-item${isCurrent ? ' active' : ''}`}
+                            aria-checked={currentQuality === opt.id}
+                            className={`chronos-popover-item${currentQuality === opt.id ? ' active' : ''}`}
                             onClick={() => {
-                              setRate(s);
+                              setQuality(opt.id);
                               setSettingsSubmenu('main');
                             }}
                           >
-                            <span style={{ fontWeight: isCurrent ? 700 : 500, fontSize: 11.5 }}>
-                              {s === 1 ? '1.0× (Normal)' : `${s}×`}
-                            </span>
-                            {isCurrent && (
+                            <div>
+                              <span style={{ fontWeight: 700, marginRight: 8, fontSize: 11.5 }}>{opt.name}</span>
+                              <span style={{ fontSize: 10, color: '#8E8B82' }}>{opt.specs}</span>
+                            </div>
+                            {currentQuality === opt.id && (
                               <span style={{ color: '#FF5A1F', fontSize: 10, fontFamily: 'JetBrains Mono', fontWeight: 700 }}>
                                 ● ACTIVE
                               </span>
                             )}
                           </button>
-                        );
-                      })}
-                    </>
-                  )}
+                        ))}
+                      </>
+                    )}
 
-                  {/* SUBMENU: SUBTITLES / CAPTIONS */}
-                  {settingsSubmenu === 'captions' && (
-                    <>
-                      <div className="chronos-popover-header">
+                    {/* SUBMENU: PLAYBACK SPEED */}
+                    {settingsSubmenu === 'speed' && (
+                      <>
+                        <div className="chronos-popover-header">
+                          <button
+                            type="button"
+                            onClick={() => setSettingsSubmenu('main')}
+                            style={{ background: 'none', border: 'none', color: '#E8E6DF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0, fontSize: 11, fontWeight: 700 }}
+                          >
+                            <IconArrowLeft size={13} />
+                            <span>PLAYBACK SPEED</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCfgMenuOpen(false)}
+                            style={{ background: 'none', border: 'none', color: '#8E8B82', cursor: 'pointer', padding: 2 }}
+                          >
+                            <IconClose size={13} />
+                          </button>
+                        </div>
+
+                        {PLAYBACK_SPEEDS.map((s) => {
+                          const isCurrent = Math.abs(playbackRate - s) < 0.05;
+                          return (
+                            <button
+                              key={s}
+                              type="button"
+                              role="menuitemradio"
+                              aria-checked={isCurrent}
+                              className={`chronos-popover-item${isCurrent ? ' active' : ''}`}
+                              onClick={() => {
+                                setRate(s);
+                                setSettingsSubmenu('main');
+                              }}
+                            >
+                              <span style={{ fontWeight: isCurrent ? 700 : 500, fontSize: 11.5 }}>
+                                {s === 1 ? '1.0× (Normal)' : `${s}×`}
+                              </span>
+                              {isCurrent && (
+                                <span style={{ color: '#FF5A1F', fontSize: 10, fontFamily: 'JetBrains Mono', fontWeight: 700 }}>
+                                  ● ACTIVE
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </>
+                    )}
+
+                    {/* SUBMENU: SUBTITLES / CAPTIONS */}
+                    {settingsSubmenu === 'captions' && (
+                      <>
+                        <div className="chronos-popover-header">
+                          <button
+                            type="button"
+                            onClick={() => setSettingsSubmenu('main')}
+                            style={{ background: 'none', border: 'none', color: '#E8E6DF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0, fontSize: 11, fontWeight: 700 }}
+                          >
+                            <IconArrowLeft size={13} />
+                            <span>SUBTITLES / CAPTIONS</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCfgMenuOpen(false)}
+                            style={{ background: 'none', border: 'none', color: '#8E8B82', cursor: 'pointer', padding: 2 }}
+                          >
+                            <IconClose size={13} />
+                          </button>
+                        </div>
+
                         <button
                           type="button"
-                          onClick={() => setSettingsSubmenu('main')}
-                          style={{ background: 'none', border: 'none', color: '#E8E6DF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0, fontSize: 11, fontWeight: 700 }}
-                        >
-                          <IconArrowLeft size={13} />
-                          <span>SUBTITLES / CAPTIONS</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCfgMenuOpen(false)}
-                          style={{ background: 'none', border: 'none', color: '#8E8B82', cursor: 'pointer', padding: 2 }}
-                        >
-                          <IconClose size={13} />
-                        </button>
-                      </div>
-
-                      <button
-                        type="button"
-                        role="menuitemradio"
-                        aria-checked={!captionsEnabled}
-                        className={`chronos-popover-item${!captionsEnabled ? ' active' : ''}`}
-                        onClick={() => {
-                          if (captionsEnabled) toggleCaptions();
-                          setSettingsSubmenu('main');
-                        }}
-                      >
-                        <span style={{ fontSize: 11.5, fontWeight: !captionsEnabled ? 700 : 500 }}>Off</span>
-                        {!captionsEnabled && (
-                          <span style={{ color: '#FF5A1F', fontSize: 10, fontFamily: 'JetBrains Mono', fontWeight: 700 }}>
-                            ● ACTIVE
-                          </span>
-                        )}
-                      </button>
-
-                      <button
-                        type="button"
-                        role="menuitemradio"
-                        aria-checked={captionsEnabled}
-                        className={`chronos-popover-item${captionsEnabled ? ' active' : ''}`}
-                        onClick={() => {
-                          if (!captionsEnabled) toggleCaptions();
-                          setSettingsSubmenu('main');
-                        }}
-                      >
-                        <span style={{ fontSize: 11.5, fontWeight: captionsEnabled ? 700 : 500 }}>English [CC] (Archival Reference)</span>
-                        {captionsEnabled && (
-                          <span style={{ color: '#FF5A1F', fontSize: 10, fontFamily: 'JetBrains Mono', fontWeight: 700 }}>
-                            ● ACTIVE
-                          </span>
-                        )}
-                      </button>
-                    </>
-                  )}
-
-                  {/* SUBMENU: AUDIO TRACKS */}
-                  {settingsSubmenu === 'audio' && (
-                    <>
-                      <div className="chronos-popover-header">
-                        <button
-                          type="button"
-                          onClick={() => setSettingsSubmenu('main')}
-                          style={{ background: 'none', border: 'none', color: '#E8E6DF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0, fontSize: 11, fontWeight: 700 }}
-                        >
-                          <IconArrowLeft size={13} />
-                          <span>AUDIO TRACKS</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setCfgMenuOpen(false)}
-                          style={{ background: 'none', border: 'none', color: '#8E8B82', cursor: 'pointer', padding: 2 }}
-                        >
-                          <IconClose size={13} />
-                        </button>
-                      </div>
-
-                      {audioTracks.map((tr) => (
-                        <button
-                          key={tr.id}
-                          type="button"
-                          className={`chronos-popover-item${activeAudioTrack === tr.id ? ' active' : ''}`}
+                          role="menuitemradio"
+                          aria-checked={!captionsEnabled}
+                          className={`chronos-popover-item${!captionsEnabled ? ' active' : ''}`}
                           onClick={() => {
-                            setAudioTrack(tr.id);
+                            if (captionsEnabled) toggleCaptions();
                             setSettingsSubmenu('main');
                           }}
                         >
-                          <span style={{ fontSize: 11.5 }}>
-                            {tr.name} {tr.lang ? `(${tr.lang.toUpperCase()})` : ''}
-                          </span>
-                          {activeAudioTrack === tr.id && (
-                            <span style={{ color: '#FF9B45', fontWeight: 700, fontSize: 10.5 }}>
+                          <span style={{ fontSize: 11.5, fontWeight: !captionsEnabled ? 700 : 500 }}>Off</span>
+                          {!captionsEnabled && (
+                            <span style={{ color: '#FF5A1F', fontSize: 10, fontFamily: 'JetBrains Mono', fontWeight: 700 }}>
                               ● ACTIVE
                             </span>
                           )}
                         </button>
-                      ))}
-                    </>
-                  )}
-                </div>
-              </>
-            )}
+
+                        <button
+                          type="button"
+                          role="menuitemradio"
+                          aria-checked={captionsEnabled}
+                          className={`chronos-popover-item${captionsEnabled ? ' active' : ''}`}
+                          onClick={() => {
+                            if (!captionsEnabled) toggleCaptions();
+                            setSettingsSubmenu('main');
+                          }}
+                        >
+                          <span style={{ fontSize: 11.5, fontWeight: captionsEnabled ? 700 : 500 }}>English [CC] (Archival Reference)</span>
+                          {captionsEnabled && (
+                            <span style={{ color: '#FF5A1F', fontSize: 10, fontFamily: 'JetBrains Mono', fontWeight: 700 }}>
+                              ● ACTIVE
+                            </span>
+                          )}
+                        </button>
+                      </>
+                    )}
+
+                    {/* SUBMENU: AUDIO TRACKS */}
+                    {settingsSubmenu === 'audio' && (
+                      <>
+                        <div className="chronos-popover-header">
+                          <button
+                            type="button"
+                            onClick={() => setSettingsSubmenu('main')}
+                            style={{ background: 'none', border: 'none', color: '#E8E6DF', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: 0, fontSize: 11, fontWeight: 700 }}
+                          >
+                            <IconArrowLeft size={13} />
+                            <span>AUDIO TRACKS</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setCfgMenuOpen(false)}
+                            style={{ background: 'none', border: 'none', color: '#8E8B82', cursor: 'pointer', padding: 2 }}
+                          >
+                            <IconClose size={13} />
+                          </button>
+                        </div>
+
+                        {audioTracks.map((tr) => (
+                          <button
+                            key={tr.id}
+                            type="button"
+                            className={`chronos-popover-item${activeAudioTrack === tr.id ? ' active' : ''}`}
+                            onClick={() => {
+                              setAudioTrack(tr.id);
+                              setSettingsSubmenu('main');
+                            }}
+                          >
+                            <span style={{ fontSize: 11.5 }}>
+                              {tr.name} {tr.lang ? `(${tr.lang.toUpperCase()})` : ''}
+                            </span>
+                            {activeAudioTrack === tr.id && (
+                              <span style={{ color: '#FF9B45', fontWeight: 700, fontSize: 10.5 }}>
+                                ● ACTIVE
+                              </span>
+                            )}
+                          </button>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* 4. Fullscreen Toggle */}

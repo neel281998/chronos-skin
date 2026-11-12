@@ -5,7 +5,7 @@
 // ═══════════════════════════════════════════════════════════════
 
 /** ⚡ PRIMARY MUX PLAYBACK ID */
-export const MUX_PLAYBACK_ID = 'DS00Spx1CV902MCtPj5WknGlR102V5HFkDe';
+export const MUX_PLAYBACK_ID = 'gyxDqEx8qnsS4P7m1zHc9QVDTwKlyvlwZXvm7uM8MXY';
 
 export const MUX_STREAM_URL = `https://stream.mux.com/${MUX_PLAYBACK_ID}.m3u8`;
 
@@ -31,7 +31,7 @@ export const ARCHIVE_REELS: ArchiveReel[] = [
     description: 'High-bitrate HLS master stream encoded via Mux Video infrastructure. Reference target for color balance and timing.',
     url: MUX_STREAM_URL,
     specs: 'HLS · H.264 · 1080p24 · Rec.709 · AAC 48kHz',
-    poster: `https://image.mux.com/${MUX_PLAYBACK_ID}/thumbnail.jpg?time=15&width=1920`,
+    poster: `https://image.mux.com/${MUX_PLAYBACK_ID}/thumbnail.jpg?time=5&width=1920`,
   },
   {
     id: 'reel-02-high-luminance',

@@ -36,7 +36,7 @@ STUDIO CHRONOS is an optical reference monitor and archival screening skin built
    - **Accessibility**: **5.0 / 5.0** (High-contrast optical scrim, visible focus outlines, full ARIA roles & slider semantics, elevated captions overlay avoiding control occlusion, calm reduced-motion mode).
    - **Execution and Polish**: **5.0 / 5.0** (Zero build errors, clean TypeScript type check, SMPTE drop-frame math, live stream `[LIVE]` handling, multi-buffered disjoint segment rendering).
 3. **Bonus Opportunities (+2.0 / +2.0 Points)**:
-   - **Mux Video Hosting (+1 pt)**: Primary stream REEL 01 is configured and verified with Mux Playback ID `DS00Spx1CV902MCtPj5WknGlR102V5HFkDe` via `https://stream.mux.com/DS00Spx1CV902MCtPj5WknGlR102V5HFkDe.m3u8`.
+   - **Mux Video Hosting (+1 pt)**: Primary stream REEL 01 is configured and verified with Mux Playback ID `gyxDqEx8qnsS4P7m1zHc9QVDTwKlyvlwZXvm7uM8MXY` via `https://stream.mux.com/gyxDqEx8qnsS4P7m1zHc9QVDTwKlyvlwZXvm7uM8MXY.m3u8`.
    - **Real Live Website Utilization (+1 pt)**: Deployed to `https://chronos-skin.vercel.app/` as an interactive Archival Screening Room & Optical Reference Monitoring Suite with a multi-reel calibration engine, 5-act chronometer chapter ledger, and technical preservation ledger.
 4. **Grand Total Score**: **27.0 / 27.0 Points (100% Maximum Achievable Score)**.
 5. **Readiness Verdict**: **SUBMISSION READY**.
@@ -233,12 +233,12 @@ Most web video skins rely on generic floating glass bars or uninspired dark tran
 - **Audit Findings**:
   - `src/config.ts:8-17` configures canonical Mux Playback ID:
     ```ts
-    export const MUX_PLAYBACK_ID = 'DS00Spx1CV902MCtPj5WknGlR102V5HFkDe';
+    export const MUX_PLAYBACK_ID = 'gyxDqEx8qnsS4P7m1zHc9QVDTwKlyvlwZXvm7uM8MXY';
     export const MUX_STREAM_URL = `https://stream.mux.com/${MUX_PLAYBACK_ID}.m3u8`;
     ```
   - Configured as **REEL 01: Mux Master Stream** (`reel-01-mux-master`).
   - `src/components/ChronosSite.tsx:50` initializes the application with `ARCHIVE_REELS[0]` (the Mux master stream) as the active reel.
-  - Video poster is dynamically fetched from Mux's thumbnail service (`https://image.mux.com/DS00Spx1CV902MCtPj5WknGlR102V5HFkDe/thumbnail.jpg?time=15&width=1920`).
+  - Video poster is dynamically fetched from Mux's thumbnail service (`https://image.mux.com/gyxDqEx8qnsS4P7m1zHc9QVDTwKlyvlwZXvm7uM8MXY/thumbnail.jpg?time=5&width=1920`).
   - HLS engine parses the Mux multi-bitrate manifest (`MANIFEST_PARSED`), surfacing genuine 1080p, 720p, 480p, and 360p renditions in the skin's quality conform menu.
 - **Verdict**: **QUALIFIED (+1.0 Point)**.
 
@@ -300,7 +300,7 @@ head -n 5 LICENSE
 
 # 6. Verify Mux stream and Live URL
 # Open in browser: https://chronos-skin.vercel.app/
-# Check Mux Playback ID: DS00Spx1CV902MCtPj5WknGlR102V5HFkDe
+# Check Mux Playback ID: gyxDqEx8qnsS4P7m1zHc9QVDTwKlyvlwZXvm7uM8MXY
 ```
 
 ---
