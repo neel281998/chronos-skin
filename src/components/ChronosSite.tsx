@@ -38,6 +38,9 @@ function formatDisplaySMPTE(seconds: number, fps = 24): string {
 }
 
 export function ChronosSite() {
+  // Device Preview View Mode: Desktop (100%), Tablet (768px), Mobile (375px)
+  const [deviceView, setDeviceView] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
+
   // Selected archival reel
   const [activeReel, setActiveReel] = useState<ArchiveReel>(ARCHIVE_REELS[0]);
   const [playerTime, setPlayerTime] = useState(0);
@@ -159,8 +162,78 @@ export function ChronosSite() {
           </p>
         </div>
 
-        {/* Archival Suite Badges */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        {/* Responsive Device View Mode Selector (Desktop / Tablet / Mobile) */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 4,
+              background: '#121210',
+              padding: '3px 4px',
+              borderRadius: 3,
+              border: '1px solid #292A25',
+            }}
+          >
+            <span style={{ fontSize: 9.5, fontFamily: 'JetBrains Mono', color: '#8E8B82', padding: '0 4px', fontWeight: 700 }}>
+              VIEW MODE:
+            </span>
+            <button
+              type="button"
+              onClick={() => setDeviceView('desktop')}
+              style={{
+                padding: '4px 8px',
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: 10,
+                fontWeight: 700,
+                background: deviceView === 'desktop' ? '#FF5A1F' : 'transparent',
+                color: deviceView === 'desktop' ? '#0A0A09' : '#8E8B82',
+                border: 'none',
+                borderRadius: 2,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              DESKTOP
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeviceView('tablet')}
+              style={{
+                padding: '4px 8px',
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: 10,
+                fontWeight: 700,
+                background: deviceView === 'tablet' ? '#FF5A1F' : 'transparent',
+                color: deviceView === 'tablet' ? '#0A0A09' : '#8E8B82',
+                border: 'none',
+                borderRadius: 2,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              TABLET (768px)
+            </button>
+            <button
+              type="button"
+              onClick={() => setDeviceView('mobile')}
+              style={{
+                padding: '4px 8px',
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: 10,
+                fontWeight: 700,
+                background: deviceView === 'mobile' ? '#FF5A1F' : 'transparent',
+                color: deviceView === 'mobile' ? '#0A0A09' : '#8E8B82',
+                border: 'none',
+                borderRadius: 2,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+            >
+              MOBILE (375px)
+            </button>
+          </div>
+
           <span
             style={{
               fontFamily: 'JetBrains Mono, monospace',
@@ -228,15 +301,48 @@ export function ChronosSite() {
           </div>
         </div>
 
-        {/* ── THE CHRONOS VIDEO.JS v10 PLAYER ── */}
-        <ChronosPlayer
-          key={activeReel.id}
-          src={activeReel.url}
-          poster={activeReel.poster}
-          aspectRatio="16/9"
-          onTimeUpdate={setPlayerTime}
-          onMetadataLoaded={handleMetadataLoaded}
-        />
+        {/* ── RESPONSIVE DEVICE WRAPPER FRAME (Desktop / Tablet / Mobile) ── */}
+        <div
+          style={{
+            maxWidth: deviceView === 'mobile' ? 375 : deviceView === 'tablet' ? 768 : '100%',
+            margin: '0 auto',
+            transition: 'max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+            boxShadow: deviceView !== 'desktop' ? '0 20px 48px rgba(0,0,0,0.85), 0 0 0 1px #292A25' : 'none',
+            borderRadius: deviceView === 'mobile' ? 12 : deviceView === 'tablet' ? 8 : 0,
+            overflow: 'hidden',
+          }}
+        >
+          {deviceView !== 'desktop' && (
+            <div
+              style={{
+                background: '#141412',
+                borderBottom: '1px solid #292A25',
+                padding: '6px 12px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontFamily: 'JetBrains Mono',
+                fontSize: 10,
+                color: '#8E8B82',
+              }}
+            >
+              <span style={{ fontWeight: 700, color: '#E8E6DF' }}>
+                {deviceView === 'mobile' ? 'IPHONE SE (375 × 667)' : 'IPAD (768 × 1024)'}
+              </span>
+              <span style={{ color: '#FF5A1F', fontWeight: 700 }}>● RESPONSIVE GATE</span>
+            </div>
+          )}
+
+          {/* ── THE CHRONOS VIDEO.JS v10 PLAYER ── */}
+          <ChronosPlayer
+            key={activeReel.id}
+            src={activeReel.url}
+            poster={activeReel.poster}
+            aspectRatio="16/9"
+            onTimeUpdate={setPlayerTime}
+            onMetadataLoaded={handleMetadataLoaded}
+          />
+        </div>
       </section>
 
           {/* Reference Footage Calibration Reels (03) */}

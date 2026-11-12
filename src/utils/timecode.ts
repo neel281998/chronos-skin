@@ -7,10 +7,35 @@
 // ═══════════════════════════════════════════════════════════════
 
 export type SupportedFPS = 23.976 | 24 | 25 | 29.97 | 30 | 50 | 59.94 | 60;
-export type DrumMode = 'smpte' | 'remaining' | 'frames';
+export type DrumMode = 'smpte' | 'remaining';
 
 const pad2 = (n: number) => String(Math.floor(Math.max(0, n))).padStart(2, '0');
 const pad6 = (n: number) => String(Math.floor(Math.max(0, n))).padStart(6, '0');
+
+/**
+ * Format clean HH:MM:SS (Hours, Minutes, Seconds without frames)
+ */
+export function formatTimeHMS(seconds: number): string {
+  if (!isFinite(seconds) || isNaN(seconds) || seconds < 0) {
+    return '00:00:00';
+  }
+  const total = Math.floor(seconds);
+  const ss = total % 60;
+  const mm = Math.floor(total / 60) % 60;
+  const hh = Math.floor(total / 3600);
+  return `${pad2(hh)}:${pad2(mm)}:${pad2(ss)}`;
+}
+
+/**
+ * Format remaining clean −HH:MM:SS (without frames)
+ */
+export function formatRemainingHMS(current: number, total: number): string {
+  if (!isFinite(total) || isNaN(total) || total <= 0) {
+    return '−00:00:00';
+  }
+  const rem = Math.max(0, total - current);
+  return `−${formatTimeHMS(rem)}`;
+}
 
 /**
  * SMPTE 12M standard drop-frame calculation for 29.97 fps (30000/1001).
@@ -202,11 +227,24 @@ export interface SMPTESegments {
 
 export function parseSMPTESegments(smpteStr: string): SMPTESegments {
   if (!smpteStr || smpteStr.includes('--')) {
-    return { hours: '--:', minutesSeconds: '--:--', frames: ':--' };
+    return { hours: '--:', minutesSeconds: '--:--', frames: '' };
   }
   const isNegative = smpteStr.startsWith('−') || smpteStr.startsWith('-');
   const clean = isNegative ? smpteStr.slice(1) : smpteStr;
 
+  // Handle clean HH:MM:SS (Hours, Minutes, Seconds)
+  const matchHMS = clean.match(/^(\d{2}):(\d{2}):(\d{2})$/);
+  if (matchHMS) {
+    const [, hh, mm, ss] = matchHMS;
+    return {
+      hours: `${isNegative ? '−' : ''}${hh}:`,
+      minutesSeconds: `${mm}:${ss}`,
+      frames: '',
+      isNegative,
+    };
+  }
+
+  // Handle legacy HH:MM:SS:FF or HH:MM:SS;FF
   const match = clean.match(/^(\d{2}):(\d{2}):(\d{2})([:;])(\d{2})$/);
   if (match) {
     const [, hh, mm, ss, sep, ff] = match;
@@ -219,12 +257,11 @@ export function parseSMPTESegments(smpteStr: string): SMPTESegments {
   }
 
   const parts = clean.split(/[:;]/);
-  if (parts.length === 4) {
-    const sep = clean.includes(';') ? ';' : ':';
+  if (parts.length === 3) {
     return {
       hours: `${isNegative ? '−' : ''}${parts[0]}:`,
       minutesSeconds: `${parts[1]}:${parts[2]}`,
-      frames: `${sep}${parts[3]}`,
+      frames: '',
       isNegative,
     };
   }
@@ -239,7 +276,7 @@ export function parseSMPTESegments(smpteStr: string): SMPTESegments {
 
 /**
  * Compute the complete drum screen text for desktop or mobile.
- * Accurately handles live streams (where total duration is Infinity or unknown).
+ * Accurately formats to HH:MM:SS without frames.
  */
 export function formatDrumDisplay(
   current: number,
@@ -252,20 +289,13 @@ export function formatDrumDisplay(
 
   if (isLive) {
     return {
-      currentText: isMobile ? formatSimpleTime(current) : formatSMPTE(current, fps),
+      currentText: formatTimeHMS(current),
       totalText: '[LIVE]',
       isLive: true,
     };
   }
 
   if (isMobile) {
-    if (mode === 'smpte') {
-      return {
-        currentText: formatSimpleTime(current),
-        totalText: formatSimpleTime(total),
-        isLive: false,
-      };
-    }
     if (mode === 'remaining') {
       const rem = Math.max(0, total - current);
       return {
@@ -274,36 +304,25 @@ export function formatDrumDisplay(
         isLive: false,
       };
     }
-    const fCur = secondsToFrameCount(current, fps);
-    const fTot = secondsToFrameCount(total, fps);
     return {
-      currentText: `F#${fCur}`,
-      totalText: `${fTot}`,
+      currentText: formatSimpleTime(current),
+      totalText: formatSimpleTime(total),
       isLive: false,
     };
   }
 
-  // Desktop modes (full 8-digit SMPTE + total duration)
-  if (mode === 'smpte') {
-    return {
-      currentText: formatSMPTE(current, fps),
-      totalText: formatSMPTE(total, fps),
-      isLive: false,
-    };
-  }
-
+  // Desktop modes (clean HH:MM:SS)
   if (mode === 'remaining') {
     return {
-      currentText: formatRemainingSMPTE(current, total, fps),
-      totalText: formatSMPTE(total, fps),
+      currentText: formatRemainingHMS(current, total),
+      totalText: formatTimeHMS(total),
       isLive: false,
     };
   }
 
-  // Frames mode
   return {
-    currentText: formatFrameCount(current, fps),
-    totalText: formatFrameCount(total, fps),
+    currentText: formatTimeHMS(current),
+    totalText: formatTimeHMS(total),
     isLive: false,
   };
 }

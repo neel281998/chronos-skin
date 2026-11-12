@@ -586,22 +586,74 @@
   border-top: 5px solid #FF5A1F;
 }
 
-/* Sharp Floating Loupe Tooltip on Hover */
+/* Sharp Floating Preview Frame & Loupe Tooltip on Hover */
 .chronos-loupe {
   position: absolute;
-  bottom: calc(100% + 10px);
-  transform: translateX(-50%);
+  bottom: calc(100% + 12px);
   background: #0E0E0C;
-  border: 1px solid rgba(244, 241, 234, 0.18);
-  border-radius: 3px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.85);
-  padding: 5px 10px;
-  white-space: nowrap;
+  border: 1px solid rgba(255, 90, 31, 0.45);
+  border-radius: 4px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.9), 0 0 14px rgba(255, 90, 31, 0.18);
+  padding: 6px;
   pointer-events: none;
-  z-index: 30;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.chronos-loupe-frame {
+  position: relative;
+  width: 176px;
+  height: 99px; /* 16:9 aspect ratio */
+  background: #000;
+  border-radius: 2px;
+  overflow: hidden;
+  border: 1px solid #222220;
+}
+
+.chronos-loupe-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.chronos-loupe-crosshair {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 90, 31, 0.25);
+  pointer-events: none;
+}
+
+.chronos-loupe-crosshair::before,
+.chronos-loupe-crosshair::after {
+  content: '';
+  position: absolute;
+  background: rgba(255, 90, 31, 0.35);
+}
+
+.chronos-loupe-crosshair::before {
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+}
+
+.chronos-loupe-crosshair::after {
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+}
+
+.chronos-loupe-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 4px;
 }
 
 .chronos-loupe-chapter {
@@ -615,13 +667,35 @@
 .chronos-loupe-time {
   font-family: 'JetBrains Mono', monospace;
   font-size: 11px;
+  font-weight: 700;
   color: #E8E6DF;
 }
 
-.chronos-loupe-frames {
+/* Outer Button Tooltip */
+.chronos-btn-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  background: #141412;
+  color: #E8E6DF;
+  border: 1px solid rgba(255, 90, 31, 0.4);
   font-family: 'JetBrains Mono', monospace;
   font-size: 10px;
-  color: #8E8B82;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 2px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.chronos-hw-btn:hover .chronos-btn-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* ── Machined Button Cells Row ────────────────────────────────── */

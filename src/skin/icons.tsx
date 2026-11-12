@@ -277,3 +277,20 @@ export function IconClose({ className = '', size = 16 }: IconProps) {
     </svg>
   );
 }
+
+// ── Navigation Chevrons ───────────────────────────────────────
+export function IconArrowLeft({ className = '', size = 16 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className={className}>
+      <path d="M10 3.5L5.5 8L10 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" strokeLinejoin="miter" />
+    </svg>
+  );
+}
+
+export function IconChevronRight({ className = '', size = 14 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className={className}>
+      <path d="M6 3.5L10.5 8L6 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" strokeLinejoin="miter" />
+    </svg>
+  );
+}
