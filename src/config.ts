@@ -32,7 +32,6 @@ export const ARCHIVE_REELS: ArchiveReel[] = [
     url: MUX_STREAM_URL,
     specs: 'HLS · H.264 · 1080p24 · Rec.709 · AAC 48kHz',
     poster: `https://image.mux.com/${MUX_PLAYBACK_ID}/thumbnail.jpg?time=15&width=1920`,
-    autoCueTime: 1.5,
   },
   {
     id: 'reel-02-high-luminance',
@@ -43,18 +42,16 @@ export const ARCHIVE_REELS: ArchiveReel[] = [
     url: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
     specs: 'HLS · High-Key Daylight · 1080p · Rec.709',
     poster: 'https://image.mux.com/x36xhzz/thumbnail.jpg?time=35&width=1920',
-    autoCueTime: 35.0, // Automatically jumps to bright daylight frame
   },
   {
-    id: 'reel-03-low-key-nocturne',
+    id: 'reel-03-tears-of-steel',
     reelNumber: 'REEL 03',
-    label: 'Low-Key Nocturne',
-    subLabel: 'Shadow & Grain Master',
-    description: '2.39:1 anamorphic low-key sequence featuring deep near-zero IRE black levels, optical flare reflections, and film emulsion grain.',
-    url: 'https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8',
-    specs: 'HLS · 2.39:1 Anamorphic · Low-Key Shadow Master',
-    poster: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/images/Sintel.jpg',
-    autoCueTime: 2.0,
+    label: 'Tears of Steel',
+    subLabel: '2.39:1 Anamorphic Master',
+    description: '2.39:1 anamorphic high-contrast sci-fi sequence featuring optical flare reflections, deep shadow gradations, and VFX composite conform.',
+    url: 'https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8',
+    specs: 'HLS · 2.39:1 Anamorphic · 1080p · Rec.709 · AAC',
+    poster: 'https://content.jwplatform.com/thumbs/vM7nH0Kl-1920.jpg',
   },
 ];
 

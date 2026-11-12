@@ -859,28 +859,55 @@
   position: absolute;
   bottom: calc(100% + 8px);
   right: 0;
-  min-width: 270px;
+  min-width: 285px;
   background: #0E0E0C;
-  border: 1px solid rgba(244, 241, 234, 0.16);
+  border: 1px solid rgba(244, 241, 234, 0.18);
   border-radius: 4px;
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.95), inset 0 1px 0 rgba(244, 241, 234, 0.1);
-  padding: 6px;
+  padding: 8px;
   z-index: 40;
 }
 
 .chronos-popover-header {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9.5px;
+  font-size: 11.5px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #8E8B82;
-  padding: 6px 8px 4px;
-  border-bottom: 1px solid rgba(244, 241, 234, 0.08);
-  margin-bottom: 4px;
+  color: #E8E6DF;
+  padding: 6px 8px 6px;
+  border-bottom: 1px solid rgba(244, 241, 234, 0.12);
+  margin-bottom: 6px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.chronos-popover-header button {
+  color: #E8E6DF !important;
+  opacity: 0.75;
+  transition: opacity 0.1s ease, color 0.1s ease;
+}
+
+.chronos-popover-header button:hover {
+  opacity: 1;
+  color: #FF9B45 !important;
+}
+
+/* Sub-section headings inside popovers */
+.chronos-popover-section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #FF9B45;
+  margin-bottom: 6px;
+}
+
+.chronos-popover-section {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(244, 241, 234, 0.08);
 }
 
 .chronos-popover-item {
@@ -988,6 +1015,65 @@
   to { opacity: 1; transform: scale(1); }
 }
 
+/* ── Compact / Tablet Breakpoint (640px to 900px Safe) ── */
+.chronos-player.is-compact .hide-compact,
+.chronos-player.is-compact .chronos-btn-seek-10 {
+  display: none !important;
+}
+
+.chronos-player.is-compact .chronos-meter-pct {
+  display: none !important;
+}
+
+.chronos-player.is-compact .chronos-hw-btn {
+  min-width: 38px;
+  padding: 0 6px;
+  font-size: 10.5px;
+}
+
+.chronos-player.is-compact .chronos-cell {
+  padding: 3px 4px;
+}
+
+.chronos-player.is-compact .chronos-cells-deck {
+  flex-wrap: wrap;
+}
+
+.chronos-player.is-compact .chronos-drum-screen {
+  padding: 4px 8px;
+  gap: 6px;
+}
+
+@media (max-width: 900px) {
+  .hide-compact,
+  .chronos-btn-seek-10 {
+    display: none !important;
+  }
+
+  .chronos-meter-pct {
+    display: none !important;
+  }
+
+  .chronos-hw-btn {
+    min-width: 38px;
+    padding: 0 6px;
+    font-size: 10.5px;
+  }
+
+  .chronos-cell {
+    padding: 3px 4px;
+  }
+
+  .chronos-cells-deck {
+    flex-wrap: wrap;
+  }
+
+  .chronos-drum-screen {
+    padding: 4px 8px;
+    gap: 6px;
+  }
+}
+
 /* ── Container & Viewport Mobile Responsiveness (640px & 375px Safe) ── */
 /* ── Container Responsive State (.is-mobile) ── */
 .chronos-player.is-mobile .chronos-cell.hide-mobile {
@@ -1011,22 +1097,55 @@
 .chronos-player.is-mobile .chronos-cells-deck {
   max-width: 100%;
   box-sizing: border-box;
+  display: flex;
+  align-items: stretch;
 }
 
 .chronos-player.is-mobile .chronos-cell {
-  padding: 2px 3px;
+  padding: 2px 2px;
   min-width: 0;
+  flex-shrink: 0;
 }
 
-.chronos-player.is-mobile .chronos-hw-btn {
-  min-width: 36px;
-  min-height: 38px;
-  padding: 0 6px;
+.chronos-player.is-mobile .chronos-cell:last-child {
+  flex-shrink: 1;
+  margin-left: auto;
+}
+
+/* FIX R6: Recessed Timecode Drum & SMPTE Badge Mobile Dimensions */
+.chronos-player.is-mobile .chronos-drum-screen {
+  padding: 2px 5px;
+  gap: 3px;
+  min-height: 36px;
+  box-sizing: border-box;
+}
+
+.chronos-player.is-mobile .chronos-drum-timecode {
   font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.chronos-player.is-mobile .chronos-drum-mode-badge {
+  font-size: 7.5px;
+  padding: 1px 3px;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+}
+
+/* FIX R6: Hardware Action Buttons on Mobile Viewports (375px-412px) */
+.chronos-player.is-mobile .chronos-hw-btn {
+  min-width: 30px;
+  min-height: 36px;
+  padding: 0 4px;
+  font-size: 9.5px;
 }
 
 .chronos-player.is-mobile .chronos-hw-btn-play {
-  min-width: 38px;
+  min-width: 34px;
+}
+
+.chronos-player.is-mobile .chronos-settings-text {
+  display: none;
 }
 
 .chronos-player.is-mobile .chronos-popover {
@@ -1059,19 +1178,45 @@
   .chronos-cells-deck {
     max-width: 100%;
     box-sizing: border-box;
+    display: flex;
+    align-items: stretch;
   }
   .chronos-cell {
-    padding: 2px 3px;
+    padding: 2px 2px;
     min-width: 0;
+    flex-shrink: 0;
+  }
+  .chronos-cell:last-child {
+    flex-shrink: 1;
+    margin-left: auto;
+  }
+  .chronos-drum-screen {
+    padding: 2px 5px;
+    gap: 3px;
+    min-height: 36px;
+    box-sizing: border-box;
+  }
+  .chronos-drum-timecode {
+    font-size: 10px;
+    letter-spacing: 0.02em;
+  }
+  .chronos-drum-mode-badge {
+    font-size: 7.5px;
+    padding: 1px 3px;
+    letter-spacing: 0.03em;
+    line-height: 1.2;
   }
   .chronos-hw-btn {
-    min-width: 36px;
-    min-height: 38px;
-    padding: 0 6px;
-    font-size: 10px;
+    min-width: 30px;
+    min-height: 36px;
+    padding: 0 4px;
+    font-size: 9.5px;
   }
   .chronos-hw-btn-play {
-    min-width: 38px;
+    min-width: 34px;
+  }
+  .chronos-settings-text {
+    display: none;
   }
   .chronos-popover {
     position: fixed;

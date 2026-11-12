@@ -37,15 +37,7 @@ function formatDisplaySMPTE(seconds: number, fps = 24): string {
   return `${parts.hours}${parts.main}${parts.frames}`;
 }
 
-type ViewMode = 'suite' | 'standalone';
-type AspectRatioMode = '16/9' | '21/9' | '4/3' | 'fill';
-
 export function ChronosSite() {
-  // Mode: Archival Suite vs Standalone Skin Testbed
-  const [viewMode, setViewMode] = useState<ViewMode>('suite');
-  const [aspectRatio, setAspectRatio] = useState<AspectRatioMode>('16/9');
-  const [standaloneWidth, setStandaloneWidth] = useState<string>('100%');
-
   // Selected archival reel
   const [activeReel, setActiveReel] = useState<ArchiveReel>(ARCHIVE_REELS[0]);
   const [playerTime, setPlayerTime] = useState(0);
@@ -167,58 +159,8 @@ export function ChronosSite() {
           </p>
         </div>
 
-        {/* View Mode Toggle & Badges */}
+        {/* Archival Suite Badges */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* View Mode Switcher: Archival Suite vs Standalone Skin */}
-          <div
-            style={{
-              display: 'inline-flex',
-              background: '#10110F',
-              border: '1px solid #292A25',
-              borderRadius: 3,
-              padding: 2,
-            }}
-          >
-            <button
-              type="button"
-              onClick={() => setViewMode('suite')}
-              style={{
-                background: viewMode === 'suite' ? '#FF5A1F' : 'transparent',
-                color: viewMode === 'suite' ? '#0A0A09' : '#8E8B82',
-                border: 'none',
-                borderRadius: 2,
-                padding: '6px 12px',
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: 10.5,
-                fontWeight: 700,
-                letterSpacing: '0.06em',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              ARCHIVAL SUITE
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('standalone')}
-              style={{
-                background: viewMode === 'standalone' ? '#FF5A1F' : 'transparent',
-                color: viewMode === 'standalone' ? '#0A0A09' : '#8E8B82',
-                border: 'none',
-                borderRadius: 2,
-                padding: '6px 12px',
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: 10.5,
-                fontWeight: 700,
-                letterSpacing: '0.06em',
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              STANDALONE SKIN
-            </button>
-          </div>
-
           <span
             style={{
               fontFamily: 'JetBrains Mono, monospace',
@@ -238,227 +180,64 @@ export function ChronosSite() {
       </header>
 
       {/* ════════════════════════════════════════════════════════
-          STANDALONE SKIN TESTING RIG (WHEN IN STANDALONE MODE)
+          ARCHIVAL SUITE VIEW (FULL CURATED SCREENING ROOM)
           ════════════════════════════════════════════════════════ */}
-      {viewMode === 'standalone' ? (
-        <section
+      {/* Primary Screening Frame */}
+      <section
+        style={{
+          maxWidth: 1240,
+          margin: '0 auto',
+          padding: '28px 24px 0',
+        }}
+      >
+        {/* Screening Frame Header */}
+        <div
           style={{
-            maxWidth: 1240,
-            margin: '0 auto',
-            padding: '24px 20px 48px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: 10,
+            padding: '0 4px',
           }}
         >
-          {/* Standalone Control Toolbar */}
-          <div
-            style={{
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: 16,
-              background: '#10110F',
-              border: '1px solid #292A25',
-              borderRadius: 4,
-              padding: '12px 18px',
-              marginBottom: 20,
-            }}
-          >
-            {/* Aspect Ratio Switcher */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: '#8E8B82', fontWeight: 700 }}>
-                ASPECT RATIO:
-              </span>
-              <div style={{ display: 'flex', gap: 4 }}>
-                {[
-                  { label: '16:9 (Standard)', value: '16/9' },
-                  { label: '21:9 (Cinema)', value: '21/9' },
-                  { label: '4:3 (Academy)', value: '4/3' },
-                ].map((ar) => (
-                  <button
-                    key={ar.value}
-                    type="button"
-                    onClick={() => setAspectRatio(ar.value as AspectRatioMode)}
-                    style={{
-                      background: aspectRatio === ar.value ? 'rgba(255, 90, 31, 0.18)' : '#181916',
-                      border: aspectRatio === ar.value ? '1px solid #FF5A1F' : '1px solid #292A25',
-                      color: aspectRatio === ar.value ? '#FF5A1F' : '#8E8B82',
-                      fontFamily: 'JetBrains Mono, monospace',
-                      fontSize: 10,
-                      fontWeight: 700,
-                      padding: '5px 10px',
-                      borderRadius: 2,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {ar.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Container Width Preset */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: '#8E8B82', fontWeight: 700 }}>
-                CHASSIS WIDTH:
-              </span>
-              <div style={{ display: 'flex', gap: 4 }}>
-                {['100%', '1100px', '800px', '420px'].map((w) => (
-                  <button
-                    key={w}
-                    type="button"
-                    onClick={() => setStandaloneWidth(w)}
-                    style={{
-                      background: standaloneWidth === w ? 'rgba(255, 90, 31, 0.18)' : '#181916',
-                      border: standaloneWidth === w ? '1px solid #FF5A1F' : '1px solid #292A25',
-                      color: standaloneWidth === w ? '#FF5A1F' : '#8E8B82',
-                      fontFamily: 'JetBrains Mono, monospace',
-                      fontSize: 10,
-                      fontWeight: 700,
-                      padding: '5px 10px',
-                      borderRadius: 2,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {w}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Active Reel Switcher */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 10, fontFamily: 'JetBrains Mono', color: '#8E8B82', fontWeight: 700 }}>
-                REEL:
-              </span>
-              <div style={{ display: 'flex', gap: 4 }}>
-                {ARCHIVE_REELS.map((reel) => (
-                  <button
-                    key={reel.id}
-                    type="button"
-                    onClick={() => handleSelectReel(reel)}
-                    style={{
-                      background: activeReel.id === reel.id ? 'rgba(255, 90, 31, 0.18)' : '#181916',
-                      border: activeReel.id === reel.id ? '1px solid #FF5A1F' : '1px solid #292A25',
-                      color: activeReel.id === reel.id ? '#FF5A1F' : '#8E8B82',
-                      fontFamily: 'JetBrains Mono, monospace',
-                      fontSize: 10,
-                      fontWeight: 700,
-                      padding: '5px 10px',
-                      borderRadius: 2,
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {reel.reelNumber}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Standalone Player Container */}
-          <div
-            style={{
-              width: standaloneWidth,
-              margin: '0 auto',
-              transition: 'width 0.25s ease',
-            }}
-          >
-            <ChronosPlayer
-              key={activeReel.id}
-              src={activeReel.url}
-              poster={activeReel.poster}
-              autoCueTime={activeReel.autoCueTime}
-              aspectRatio={aspectRatio}
-              onTimeUpdate={setPlayerTime}
-              onMetadataLoaded={handleMetadataLoaded}
-            />
-          </div>
-
-          <div
-            style={{
-              marginTop: 20,
-              padding: '12px 16px',
-              background: '#10110F',
-              border: '1px solid #292A25',
-              borderRadius: 3,
-              fontSize: 11,
-              fontFamily: 'JetBrains Mono, monospace',
-              color: '#8E8B82',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-            }}
-          >
-            <span>
-              STATUS: STANDALONE SKIN HARNESS ACTIVE · TESTING ISOLATED CONTROLS &amp; DOCK
-            </span>
-            <span style={{ color: '#FF5A1F' }}>
-              CURRENT REEL: {activeReel.label} ({activeReel.specs})
-            </span>
-          </div>
-        </section>
-      ) : (
-        /* ════════════════════════════════════════════════════════
-            ARCHIVAL SUITE VIEW (FULL CURATED SCREENING ROOM)
-            ════════════════════════════════════════════════════════ */
-        <>
-          {/* Primary Screening Frame */}
-          <section
-            style={{
-              maxWidth: 1240,
-              margin: '0 auto',
-              padding: '28px 24px 0',
-            }}
-          >
-            {/* Screening Frame Header */}
-            <div
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span
               style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 10,
-                padding: '0 4px',
+                fontFamily: 'JetBrains Mono, monospace',
+                fontSize: 11,
+                fontWeight: 700,
+                color: '#FF5A1F',
+                letterSpacing: '0.08em',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span
-                  style={{
-                    fontFamily: 'JetBrains Mono, monospace',
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: '#FF5A1F',
-                    letterSpacing: '0.08em',
-                  }}
-                >
-                  // {activeReel.reelNumber}
-                </span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#E8E6DF' }}>
-                  {activeReel.label}
-                </span>
-              </div>
+              // {activeReel.reelNumber}
+            </span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#E8E6DF' }}>
+              {activeReel.label}
+            </span>
+          </div>
 
-              <div
-                style={{
-                  fontFamily: 'JetBrains Mono, monospace',
-                  fontSize: 10.5,
-                  color: '#8E8B82',
-                }}
-              >
-                {activeReel.specs}
-              </div>
-            </div>
+          <div
+            style={{
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: 10.5,
+              color: '#8E8B82',
+            }}
+          >
+            {activeReel.specs}
+          </div>
+        </div>
 
-            {/* ── THE CHRONOS VIDEO.JS v10 PLAYER ── */}
-            <ChronosPlayer
-              key={activeReel.id}
-              src={activeReel.url}
-              poster={activeReel.poster}
-              autoCueTime={activeReel.autoCueTime}
-              aspectRatio="16/9"
-              onTimeUpdate={setPlayerTime}
-              onMetadataLoaded={handleMetadataLoaded}
-            />
-          </section>
+        {/* ── THE CHRONOS VIDEO.JS v10 PLAYER ── */}
+        <ChronosPlayer
+          key={activeReel.id}
+          src={activeReel.url}
+          poster={activeReel.poster}
+          aspectRatio="16/9"
+          onTimeUpdate={setPlayerTime}
+          onMetadataLoaded={handleMetadataLoaded}
+        />
+      </section>
 
           {/* Reference Footage Calibration Reels (03) */}
           <section
@@ -839,8 +618,6 @@ export function ChronosSite() {
               </div>
             </section>
           </main>
-        </>
-      )}
 
       {/* ════════════════════════════════════════════════════════
           EDITORIAL FOOTER (Swiss Archival Style)

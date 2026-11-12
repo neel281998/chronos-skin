@@ -200,6 +200,7 @@ function ChronosSkinInternal({
   const [keysModalOpen, setKeysModalOpen] = useState(false);
   const [pipActive, setPipActive] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isCompact, setIsCompact] = useState(false);
 
   // Hover & Scrubbing State
   const [hoverTime, setHoverTime] = useState<number | null>(null);
@@ -226,6 +227,7 @@ function ChronosSkinInternal({
 
     const updateSize = (w: number) => {
       setIsMobile(w <= 640);
+      setIsCompact(w <= 900);
     };
 
     if (containerWidth !== undefined) {
@@ -523,11 +525,11 @@ function ChronosSkinInternal({
     setHasError(false);
     setPlaying(!video.paused);
 
-    // Auto-cue to specified frame or daylight timestamp
-    if (autoCueTime !== undefined && autoCueTime > 0 && video.currentTime < autoCueTime) {
+    // Ensure playback consistently cues and starts at exact timecode 00:00:00:00 across all reels
+    if (!hasStartedPlayback && video.currentTime !== 0) {
       try {
-        video.currentTime = autoCueTime;
-        setCurrentTime(autoCueTime);
+        video.currentTime = 0;
+        setCurrentTime(0);
       } catch {}
     }
 
@@ -557,7 +559,7 @@ function ChronosSkinInternal({
     });
 
     updateBufferedRanges();
-  }, [autoCueTime, src, onMetadataLoaded, updateBufferedRanges]);
+  }, [hasStartedPlayback, src, onMetadataLoaded, updateBufferedRanges]);
 
   const handleDurationChange = useCallback(() => {
     const video = videoRef.current;
@@ -1031,7 +1033,7 @@ function ChronosSkinInternal({
   return (
     <Container
       ref={containerRef}
-      className={`chronos-player media-container media-video media-skin${isMobile ? ' is-mobile' : ''}`}
+      className={`chronos-player media-container media-video media-skin${isCompact ? ' is-compact' : ''}${isMobile ? ' is-mobile' : ''}`}
       data-videojs-v10="true"
       data-skin="chronos"
       data-media-player=""
@@ -1041,6 +1043,7 @@ function ChronosSkinInternal({
       data-can-play={canPlay}
       data-waiting={waiting}
       data-fullscreen={fullscreen}
+      data-is-compact={isCompact ? 'true' : 'false'}
       data-is-mobile={isMobile ? 'true' : 'false'}
       tabIndex={0}
       role="region"
@@ -1310,7 +1313,7 @@ function ChronosSkinInternal({
               <>
                 <button
                   type="button"
-                  className="chronos-hw-btn"
+                  className="chronos-hw-btn chronos-btn-seek-10 hide-compact"
                   onClick={() => seekRelative(-10)}
                   aria-label="Rewind 10 seconds (-10s)"
                   title="Rewind 10s"
@@ -1320,7 +1323,7 @@ function ChronosSkinInternal({
                 </button>
                 <button
                   type="button"
-                  className="chronos-hw-btn"
+                  className="chronos-hw-btn chronos-btn-seek-10 hide-compact"
                   onClick={() => seekRelative(10)}
                   aria-label="Forward 10 seconds (+10s)"
                   title="Forward 10s"
@@ -1566,7 +1569,7 @@ function ChronosSkinInternal({
                 <button
                   ref={indexBtnRef}
                   type="button"
-                  className={`chronos-hw-btn${indexMenuOpen ? ' active' : ''}`}
+                  className={`chronos-hw-btn hide-compact${indexMenuOpen ? ' active' : ''}`}
                   onClick={() => {
                     setIndexMenuOpen((o) => !o);
                     setQualityMenuOpen(false);
@@ -1657,7 +1660,7 @@ function ChronosSkinInternal({
               <span style={{ marginLeft: 3, fontWeight: 700 }}>[CC]</span>
             </button>
 
-            {/* 5. Industrial Settings Menu [CFG] with Hardware Rotary Wheel & Audio Tracks */}
+            {/* 5. Industrial Settings Menu [SETTINGS] */}
             <div style={{ position: 'relative' }}>
               <button
                 ref={cfgBtnRef}
@@ -1668,11 +1671,12 @@ function ChronosSkinInternal({
                   setQualityMenuOpen(false);
                   setIndexMenuOpen(false);
                 }}
-                aria-label="Industrial configuration menu"
+                aria-label="Player settings menu"
+                title="Player Settings [SETTINGS]"
                 aria-expanded={cfgMenuOpen}
               >
                 <IconSettings size={14} />
-                <span style={{ marginLeft: 3 }}>[CFG]</span>
+                <span className="chronos-btn-label chronos-settings-text" style={{ marginLeft: 3 }}>[SETTINGS]</span>
               </button>
 
               {cfgMenuOpen && (
@@ -1683,30 +1687,30 @@ function ChronosSkinInternal({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="chronos-popover-header">
-                    <span>Precision Configuration</span>
+                    <span>PRECISION CONFIGURATION</span>
                     <button
                       type="button"
                       onClick={() => setCfgMenuOpen(false)}
-                      style={{ background: 'none', border: 'none', color: '#8E8B82', cursor: 'pointer' }}
+                      style={{ background: 'none', border: 'none', color: '#E8E6DF', cursor: 'pointer', padding: 2 }}
                       aria-label="Close configuration menu"
                     >
-                      <IconClose size={12} />
+                      <IconClose size={13} />
                     </button>
                   </div>
 
                   {/* Quality Settings in Menu */}
                   {isAdaptiveHls && qualityOptions.length > 1 && (
-                    <div style={{ padding: '6px 8px', borderBottom: '1px solid rgba(244,241,234,0.06)' }}>
-                      <div style={{ fontSize: 9.5, color: '#8E8B82', marginBottom: 4, fontFamily: 'JetBrains Mono' }}>
+                    <div className="chronos-popover-section">
+                      <div className="chronos-popover-section-label">
                         RESOLUTION CONFORM
                       </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                         {qualityOptions.map((opt) => (
                           <button
                             key={opt.id}
                             type="button"
                             className={`chronos-hw-btn${currentQuality === opt.id ? ' active' : ''}`}
-                            style={{ minWidth: 'auto', height: 24, fontSize: 9.5, padding: '0 6px' }}
+                            style={{ minWidth: 'auto', height: 26, fontSize: 11, padding: '0 8px', fontWeight: 600 }}
                             onClick={() => setQuality(opt.id)}
                           >
                             {opt.badge}
@@ -1717,25 +1721,25 @@ function ChronosSkinInternal({
                   )}
 
                   {/* FIX 4: Genuine Audio Track Selection */}
-                  <div style={{ padding: '6px 8px', borderBottom: '1px solid rgba(244,241,234,0.06)' }}>
-                    <div style={{ fontSize: 9.5, color: '#8E8B82', marginBottom: 4, fontFamily: 'JetBrains Mono' }}>
+                  <div className="chronos-popover-section">
+                    <div className="chronos-popover-section-label">
                       AUDIO MONITOR &amp; TRACKS
                     </div>
                     {audioTracks.length > 1 ? (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                         {audioTracks.map((tr) => (
                           <button
                             key={tr.id}
                             type="button"
                             className={`chronos-popover-item${activeAudioTrack === tr.id ? ' active' : ''}`}
-                            style={{ padding: '4px 6px', fontSize: 10 }}
+                            style={{ padding: '6px 8px', fontSize: 11 }}
                             onClick={() => setAudioTrack(tr.id)}
                           >
-                            <span>
+                            <span style={{ color: '#E8E6DF' }}>
                               {tr.name} {tr.lang ? `(${tr.lang.toUpperCase()})` : ''}
                             </span>
                             {activeAudioTrack === tr.id && (
-                              <span style={{ color: '#FF5A1F', fontWeight: 700, fontSize: 9.5 }}>
+                              <span style={{ color: '#FF9B45', fontWeight: 700, fontSize: 10.5 }}>
                                 ● ACTIVE
                               </span>
                             )}
@@ -1743,7 +1747,7 @@ function ChronosSkinInternal({
                         ))}
                       </div>
                     ) : (
-                      <div style={{ fontSize: 10, color: '#E8E6DF', fontFamily: 'JetBrains Mono' }}>
+                      <div style={{ fontSize: 11.5, color: '#E8E6DF', fontFamily: 'JetBrains Mono', padding: '2px 0' }}>
                         {audioTracks.length === 1
                           ? `Primary Stereo Track (${audioTracks[0].name})`
                           : 'Stereo 48.0kHz 24-bit PCM / AAC'}
@@ -1761,9 +1765,9 @@ function ChronosSkinInternal({
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <IconCaptions size={14} />
-                      <span>Subtitles / Captions [CC]</span>
+                      <span style={{ fontSize: 11.5 }}>Subtitles / Captions [CC]</span>
                     </div>
-                    <span style={{ fontSize: 10, color: captionsEnabled ? '#FF5A1F' : '#8E8B82' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, fontFamily: 'JetBrains Mono', color: captionsEnabled ? '#FF9B45' : '#E8E6DF' }}>
                       {captionsEnabled ? 'ENGLISH' : 'OFF'}
                     </span>
                   </button>
@@ -1778,9 +1782,9 @@ function ChronosSkinInternal({
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <IconLoop size={14} />
-                      <span>Continuous Reel Loop</span>
+                      <span style={{ fontSize: 11.5 }}>Continuous Reel Loop</span>
                     </div>
-                    <span style={{ fontSize: 10, color: loopEnabled ? '#FF5A1F' : '#8E8B82' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, fontFamily: 'JetBrains Mono', color: loopEnabled ? '#FF9B45' : '#E8E6DF' }}>
                       {loopEnabled ? 'ON' : 'OFF'}
                     </span>
                   </button>
@@ -1795,9 +1799,9 @@ function ChronosSkinInternal({
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <IconPiP size={14} />
-                        <span>Picture in Picture</span>
+                        <span style={{ fontSize: 11.5 }}>Picture in Picture</span>
                       </div>
-                      <span style={{ fontSize: 10, color: pipActive ? '#FF5A1F' : '#8E8B82' }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, fontFamily: 'JetBrains Mono', color: pipActive ? '#FF9B45' : '#E8E6DF' }}>
                         {pipActive ? 'ACTIVE' : 'POP OUT'}
                       </span>
                     </button>

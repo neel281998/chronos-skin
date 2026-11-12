@@ -142,16 +142,24 @@ export function IconForward10({ className = '', size = 18 }: IconProps) {
   );
 }
 
-// ── Settings / Hardware Configuration [CFG] ───────────────────
+// ── Settings / Hardware Configuration [SETTINGS] ───────────────────
 export function IconSettings({ className = '', size = 16 }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" className={className}>
-      <circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="1.5" />
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+      className={className}
+    >
+      <circle cx="10" cy="10" r="2.75" stroke="currentColor" strokeWidth="1.5" />
       <path
-        d="M10 2.5V4.5M10 15.5V17.5M2.5 10H4.5M15.5 10H17.5M4.7 4.7L6.1 6.1M13.9 13.9L15.3 15.3M4.7 15.3L6.1 13.9M13.9 6.1L15.3 4.7"
+        d="M8.8 2.5h2.4l.4 1.8 1.4.6 1.6-1 1.7 1.7-1 1.6.6 1.4 1.8.4v2.4l-1.8.4-.6 1.4 1 1.6-1.7 1.7-1.6-1-1.4.6-.4 1.8H8.8l-.4-1.8-1.4-.6-1.6 1-1.7-1.7 1-1.6-.6-1.4-1.8-.4V8.8l1.8-.4.6-1.4-1-1.6 1.7-1.7 1.6 1 1.4-.6.4-1.8z"
         stroke="currentColor"
         strokeWidth="1.5"
-        strokeLinecap="square"
+        strokeLinejoin="round"
       />
     </svg>
   );
