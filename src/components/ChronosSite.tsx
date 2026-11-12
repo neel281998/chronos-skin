@@ -339,6 +339,7 @@ export function ChronosSite() {
             src={activeReel.url}
             poster={activeReel.poster}
             aspectRatio="16/9"
+            containerWidth={deviceView === 'mobile' ? 375 : deviceView === 'tablet' ? 768 : undefined}
             onTimeUpdate={setPlayerTime}
             onMetadataLoaded={handleMetadataLoaded}
           />

@@ -66,6 +66,56 @@ function getPreviewThumbnailUrl(src: string, hoverSec: number, poster?: string):
   return poster || null;
 }
 
+interface PreviewThumbnailFrameProps {
+  src: string;
+  hoverTime: number;
+  poster?: string;
+  isMobile: boolean;
+}
+
+function PreviewThumbnailFrame({ src, hoverTime, poster, isMobile }: PreviewThumbnailFrameProps) {
+  const [loaded, setLoaded] = useState(false);
+  const [hasImgError, setHasImgError] = useState(false);
+  const thumbUrl = useMemo(() => getPreviewThumbnailUrl(src, hoverTime, poster), [src, hoverTime, poster]);
+
+  useEffect(() => {
+    setLoaded(false);
+    setHasImgError(false);
+  }, [thumbUrl]);
+
+  // Mobile view: completely omit the 176x99px image frame to keep video visible
+  if (isMobile) {
+    return null;
+  }
+
+  const showPlaceholder = !thumbUrl || hasImgError || !loaded;
+
+  return (
+    <div className="chronos-loupe-frame">
+      {thumbUrl && !hasImgError && (
+        <img
+          src={thumbUrl}
+          alt=""
+          className="chronos-loupe-img"
+          style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.15s ease' }}
+          onLoad={() => setLoaded(true)}
+          onError={() => setHasImgError(true)}
+          loading="eager"
+        />
+      )}
+      {showPlaceholder && (
+        <div className="chronos-loupe-placeholder">
+          <span className="chronos-loupe-scan-radar" />
+          <span className="chronos-loupe-scan-text">
+            {hasImgError || !thumbUrl ? 'CALIBRATING FRAME' : 'OPTICAL GATE SCAN'}
+          </span>
+        </div>
+      )}
+      <div className="chronos-loupe-crosshair" />
+    </div>
+  );
+}
+
 export const PLAYBACK_SPEEDS = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
 export interface VideoMetadata {
@@ -222,6 +272,7 @@ function ChronosSkinInternal({
   const [keysModalOpen, setKeysModalOpen] = useState(false);
   const [pipActive, setPipActive] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
   const [isCompact, setIsCompact] = useState(false);
 
   // Hover & Scrubbing State
@@ -249,6 +300,7 @@ function ChronosSkinInternal({
 
     const updateSize = (w: number) => {
       setIsMobile(w <= 640);
+      setIsTablet(w > 640 && w <= 820);
       setIsCompact(w <= 900);
     };
 
@@ -974,8 +1026,10 @@ function ChronosSkinInternal({
           toggleLoop();
           break;
         case '?':
-          e.preventDefault();
-          setKeysModalOpen((o) => !o);
+          if (!isMobile && !isTablet) {
+            e.preventDefault();
+            setKeysModalOpen((o) => !o);
+          }
           break;
         case 'Escape':
           if (keysModalOpen) {
@@ -1054,7 +1108,7 @@ function ChronosSkinInternal({
   return (
     <Container
       ref={containerRef}
-      className={`chronos-player media-container media-video media-skin${isCompact ? ' is-compact' : ''}${isMobile ? ' is-mobile' : ''}`}
+      className={`chronos-player media-container media-video media-skin${isCompact ? ' is-compact' : ''}${isTablet ? ' is-tablet' : ''}${isMobile ? ' is-mobile' : ''}`}
       data-videojs-v10="true"
       data-skin="chronos"
       data-media-player=""
@@ -1199,18 +1253,20 @@ function ChronosSkinInternal({
           </span>
         </div>
 
-        <div className="chronos-hud-actions">
-          <button
-            ref={keysBtnRef}
-            type="button"
-            className="chronos-hud-key-btn"
-            onClick={() => setKeysModalOpen(true)}
-            aria-label="Open keyboard shortcuts matrix"
-          >
-            <IconKeybindings size={13} />
-            <span>? KEYS</span>
-          </button>
-        </div>
+        {!isMobile && !isTablet && (
+          <div className="chronos-hud-actions">
+            <button
+              ref={keysBtnRef}
+              type="button"
+              className="chronos-hud-key-btn"
+              onClick={() => setKeysModalOpen(true)}
+              aria-label="Open keyboard shortcuts matrix"
+            >
+              <IconKeybindings size={13} />
+              <span>? KEYS</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Subtitle / Captions Display (Elevated Above Control Deck) ── */}
@@ -1305,20 +1361,16 @@ function ChronosSkinInternal({
           {/* Floating Loupe Tooltip on Hover with Video Preview Frame */}
           {hoverTime !== null && hoverChapter && !isLive && (
             <div
-              className="chronos-loupe"
+              className={`chronos-loupe${isMobile ? ' is-mobile' : ''}`}
               style={{ left: `${Math.max(12, Math.min(88, hoverXPercent))}%` }}
               aria-hidden="true"
             >
-              {(() => {
-                const thumb = getPreviewThumbnailUrl(src, hoverTime, poster);
-                if (!thumb) return null;
-                return (
-                  <div className="chronos-loupe-frame">
-                    <img src={thumb} alt="" className="chronos-loupe-img" loading="eager" />
-                    <div className="chronos-loupe-crosshair" />
-                  </div>
-                );
-              })()}
+              <PreviewThumbnailFrame
+                src={src}
+                hoverTime={hoverTime}
+                poster={poster}
+                isMobile={isMobile}
+              />
               <div className="chronos-loupe-info">
                 <span className="chronos-loupe-chapter">{hoverChapter.code}</span>
                 <span className="chronos-loupe-time">{formatTimeHMS(hoverTime)}</span>
@@ -1589,12 +1641,20 @@ function ChronosSkinInternal({
               </button>
 
               {cfgMenuOpen && (
-                <div
-                  className="chronos-popover"
-                  role="menu"
-                  aria-label="Player Configuration"
-                  onClick={(e) => e.stopPropagation()}
-                >
+                <>
+                  {isMobile && (
+                    <div
+                      className="chronos-popover-mobile-backdrop"
+                      onClick={() => setCfgMenuOpen(false)}
+                      aria-hidden="true"
+                    />
+                  )}
+                  <div
+                    className="chronos-popover"
+                    role="menu"
+                    aria-label="Player Configuration"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                   {/* MAIN SETTINGS MENU */}
                   {settingsSubmenu === 'main' && (
                     <>
@@ -1902,7 +1962,8 @@ function ChronosSkinInternal({
                     </>
                   )}
                 </div>
-              )}
+              </>
+            )}
             </div>
 
             {/* 4. Fullscreen Toggle */}
@@ -1920,8 +1981,8 @@ function ChronosSkinInternal({
         </div>
       </div>
 
-      {/* ── In-Player Keybindings Matrix Modal ── */}
-      {keysModalOpen && (
+      {/* ── In-Player Keybindings Matrix Modal (Desktop Only) ── */}
+      {!isMobile && !isTablet && keysModalOpen && (
         <div
           className="chronos-key-modal-backdrop"
           onClick={() => setKeysModalOpen(false)}

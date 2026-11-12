@@ -603,6 +603,20 @@
   gap: 6px;
 }
 
+.chronos-loupe.is-mobile {
+  padding: 4px 8px;
+  gap: 0;
+  bottom: calc(100% + 6px);
+  border-radius: 3px;
+  min-width: 0;
+}
+
+.chronos-loupe.is-mobile .chronos-loupe-info {
+  gap: 8px;
+  padding: 0;
+  width: auto;
+}
+
 .chronos-loupe-frame {
   position: relative;
   width: 176px;
@@ -611,6 +625,57 @@
   border-radius: 2px;
   overflow: hidden;
   border: 1px solid #222220;
+}
+
+/* ── Optical Gate Scan & Calibrating Frame Placeholder ── */
+.chronos-loupe-placeholder {
+  width: 176px;
+  height: 99px;
+  background: #090A08;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 90, 31, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.chronos-loupe-placeholder::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 90, 31, 0.15), transparent);
+  animation: chronos-radar-sweep 1.4s infinite linear;
+}
+
+@keyframes chronos-radar-sweep {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.chronos-loupe-scan-radar {
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid #FF5A1F;
+  border-radius: 50%;
+  border-top-color: transparent;
+  animation: chronos-spin 0.8s infinite linear;
+}
+
+.chronos-loupe-scan-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #FF9B45;
+  text-transform: uppercase;
+  z-index: 2;
 }
 
 .chronos-loupe-img {
@@ -1149,6 +1214,28 @@
 }
 
 /* ── Container & Viewport Mobile Responsiveness (640px & 375px Safe) ── */
+
+/* Hide keyboard shortcuts trigger & matrix on tablet & mobile devices */
+.chronos-player.is-tablet .chronos-hud-actions,
+.chronos-player.is-mobile .chronos-hud-actions {
+  display: none !important;
+}
+
+.chronos-player.is-tablet .chronos-key-modal-backdrop,
+.chronos-player.is-mobile .chronos-key-modal-backdrop {
+  display: none !important;
+}
+
+/* Mobile Popover Drawer Backdrop */
+.chronos-popover-mobile-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  z-index: 55;
+}
+
 /* ── Container Responsive State (.is-mobile) ── */
 .chronos-player.is-mobile .chronos-cell.hide-mobile {
   display: none !important;
@@ -1159,24 +1246,44 @@
   display: none !important;
 }
 
+/* Ultra-Compact Control Deck Footprint on Mobile */
 .chronos-player.is-mobile .chronos-deck {
-  bottom: 6px;
-  left: 6px;
-  right: 6px;
-  padding: 4px 6px 6px;
-  max-width: calc(100% - 12px);
+  bottom: 4px;
+  left: 4px;
+  right: 4px;
+  padding: 3px 4px 4px;
+  max-width: calc(100% - 8px);
   box-sizing: border-box;
+  border-radius: 3px;
+}
+
+.chronos-player.is-mobile .chronos-ruler-wrapper {
+  height: 6px;
+  margin-bottom: 3px;
+  border-radius: 2px;
+}
+
+.chronos-player.is-mobile .chronos-needle {
+  height: 6px;
+  width: 2px;
+  border-radius: 1px;
+}
+
+.chronos-player.is-mobile .chronos-needle::before {
+  display: none !important;
 }
 
 .chronos-player.is-mobile .chronos-cells-deck {
   max-width: 100%;
   box-sizing: border-box;
   display: flex;
-  align-items: stretch;
+  align-items: center;
+  min-height: 28px;
+  height: 28px;
 }
 
 .chronos-player.is-mobile .chronos-cell {
-  padding: 2px 2px;
+  padding: 0 1px;
   min-width: 0;
   flex-shrink: 0;
 }
@@ -1186,53 +1293,74 @@
   margin-left: auto;
 }
 
-/* FIX R6: Recessed Timecode Drum & SMPTE Badge Mobile Dimensions */
+/* Recessed Timecode Drum Mobile Dimensions */
 .chronos-player.is-mobile .chronos-drum-screen {
-  padding: 2px 5px;
-  gap: 3px;
-  min-height: 36px;
+  padding: 1px 4px;
+  gap: 2px;
+  min-height: 26px;
+  height: 26px;
   box-sizing: border-box;
 }
 
 .chronos-player.is-mobile .chronos-drum-timecode {
-  font-size: 10px;
+  font-size: 9px;
   letter-spacing: 0.02em;
 }
 
 .chronos-player.is-mobile .chronos-drum-mode-badge {
-  font-size: 7.5px;
-  padding: 1px 3px;
-  letter-spacing: 0.03em;
-  line-height: 1.2;
+  display: none !important;
 }
 
-/* FIX R6: Hardware Action Buttons on Mobile Viewports (375px-412px) */
+/* Hardware Action Buttons on Mobile Viewports (375px-412px) */
 .chronos-player.is-mobile .chronos-hw-btn {
-  min-width: 30px;
-  min-height: 36px;
+  min-width: 28px;
+  min-height: 28px;
+  height: 28px;
   padding: 0 4px;
-  font-size: 9.5px;
+  font-size: 9px;
+  border-radius: 2px;
 }
 
 .chronos-player.is-mobile .chronos-hw-btn-play {
-  min-width: 34px;
+  min-width: 30px;
 }
 
 .chronos-player.is-mobile .chronos-settings-text {
   display: none;
 }
 
+/* Mobile Settings Bottom-Sheet Drawer */
 .chronos-player.is-mobile .chronos-popover {
-  position: fixed;
-  bottom: 12px;
-  left: 12px;
-  right: 12px;
-  max-height: 75vh;
-  overflow-y: auto;
-  z-index: 50;
+  position: absolute !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  top: auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-height: 85% !important;
+  overflow-y: auto !important;
+  border-radius: 12px 12px 0 0 !important;
+  border: none !important;
+  border-top: 1px solid rgba(255, 90, 31, 0.5) !important;
+  background: rgba(14, 14, 12, 0.98) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.95) !important;
+  padding: 12px 14px 16px !important;
+  z-index: 60 !important;
 }
 
 /* ── Viewport Mobile Responsiveness (640px & 375px Safe) ── */
+@media (max-width: 820px) {
+  .chronos-hud-actions {
+    display: none !important;
+  }
+  .chronos-key-modal-backdrop {
+    display: none !important;
+  }
+}
+
 @media (max-width: 640px) {
   .chronos-cell.hide-mobile {
     display: none !important;
@@ -1242,21 +1370,37 @@
     display: none !important;
   }
   .chronos-deck {
-    bottom: 6px;
-    left: 6px;
-    right: 6px;
-    padding: 4px 6px 6px;
-    max-width: calc(100% - 12px);
+    bottom: 4px;
+    left: 4px;
+    right: 4px;
+    padding: 3px 4px 4px;
+    max-width: calc(100% - 8px);
     box-sizing: border-box;
+    border-radius: 3px;
+  }
+  .chronos-ruler-wrapper {
+    height: 6px;
+    margin-bottom: 3px;
+    border-radius: 2px;
+  }
+  .chronos-needle {
+    height: 6px;
+    width: 2px;
+    border-radius: 1px;
+  }
+  .chronos-needle::before {
+    display: none !important;
   }
   .chronos-cells-deck {
     max-width: 100%;
     box-sizing: border-box;
     display: flex;
-    align-items: stretch;
+    align-items: center;
+    min-height: 28px;
+    height: 28px;
   }
   .chronos-cell {
-    padding: 2px 2px;
+    padding: 0 1px;
     min-width: 0;
     flex-shrink: 0;
   }
@@ -1265,41 +1409,52 @@
     margin-left: auto;
   }
   .chronos-drum-screen {
-    padding: 2px 5px;
-    gap: 3px;
-    min-height: 36px;
+    padding: 1px 4px;
+    gap: 2px;
+    min-height: 26px;
+    height: 26px;
     box-sizing: border-box;
   }
   .chronos-drum-timecode {
-    font-size: 10px;
+    font-size: 9px;
     letter-spacing: 0.02em;
   }
   .chronos-drum-mode-badge {
-    font-size: 7.5px;
-    padding: 1px 3px;
-    letter-spacing: 0.03em;
-    line-height: 1.2;
+    display: none !important;
   }
   .chronos-hw-btn {
-    min-width: 30px;
-    min-height: 36px;
+    min-width: 28px;
+    min-height: 28px;
+    height: 28px;
     padding: 0 4px;
-    font-size: 9.5px;
+    font-size: 9px;
+    border-radius: 2px;
   }
   .chronos-hw-btn-play {
-    min-width: 34px;
+    min-width: 30px;
   }
   .chronos-settings-text {
     display: none;
   }
   .chronos-popover {
-    position: fixed;
-    bottom: 12px;
-    left: 12px;
-    right: 12px;
-    max-height: 75vh;
-    overflow-y: auto;
-    z-index: 50;
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-height: 85% !important;
+    overflow-y: auto !important;
+    border-radius: 12px 12px 0 0 !important;
+    border: none !important;
+    border-top: 1px solid rgba(255, 90, 31, 0.5) !important;
+    background: rgba(14, 14, 12, 0.98) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.95) !important;
+    padding: 12px 14px 16px !important;
+    z-index: 60 !important;
   }
 }
 
