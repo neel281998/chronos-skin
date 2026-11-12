@@ -1243,14 +1243,18 @@ function ChronosSkinInternal({
           <span className="chronos-hud-state" style={{ color: telemetryStatus.color }}>
             {telemetryStatus.label}
           </span>
-          <span className="chronos-hud-sep">|</span>
-          <span className="chronos-hud-chapter">
-            {currentChapter ? `${currentChapter.code} : ${currentChapter.title}` : 'CALIBRATING'}
-          </span>
-          <span className="chronos-hud-sep">|</span>
-          <span className="chronos-hud-tech">
-            {videoRef.current?.videoWidth || 1920}×{videoRef.current?.videoHeight || 1080} • 24.00 FPS • REC.709
-          </span>
+          {!isMobile && (
+            <>
+              <span className="chronos-hud-sep">|</span>
+              <span className="chronos-hud-chapter">
+                {currentChapter ? `${currentChapter.code} : ${currentChapter.title}` : 'CALIBRATING'}
+              </span>
+              <span className="chronos-hud-sep">|</span>
+              <span className="chronos-hud-tech">
+                {videoRef.current?.videoWidth || 1920}×{videoRef.current?.videoHeight || 1080} • 24.00 FPS • REC.709
+              </span>
+            </>
+          )}
         </div>
 
         {!isMobile && !isTablet && (
@@ -1399,21 +1403,21 @@ function ChronosSkinInternal({
                   type="button"
                   className="chronos-hw-btn chronos-btn-seek-10 hide-compact"
                   onClick={() => seekRelative(-10)}
-                  aria-label="Rewind 10 seconds (-10s)"
-                  title="Rewind 10s"
+                  aria-label="Rewind 10 seconds"
+                  style={{ position: 'relative' }}
                 >
-                  <IconReplay10 size={16} />
-                  <span style={{ fontSize: 9.5, fontWeight: 700, marginLeft: 2 }}>-10s</span>
+                  <IconReplay10 size={19} />
+                  <span className="chronos-btn-tooltip">Rewind 10s (Left Arrow)</span>
                 </button>
                 <button
                   type="button"
                   className="chronos-hw-btn chronos-btn-seek-10 hide-compact"
                   onClick={() => seekRelative(10)}
-                  aria-label="Forward 10 seconds (+10s)"
-                  title="Forward 10s"
+                  aria-label="Forward 10 seconds"
+                  style={{ position: 'relative' }}
                 >
-                  <span style={{ fontSize: 9.5, fontWeight: 700, marginRight: 2 }}>+10s</span>
-                  <IconForward10 size={16} />
+                  <IconForward10 size={19} />
+                  <span className="chronos-btn-tooltip">Forward 10s (Right Arrow)</span>
                 </button>
               </>
             )}
@@ -1606,11 +1610,11 @@ function ChronosSkinInternal({
               </div>
             )}
 
-            {/* 2. Standalone Picture-in-Picture [ ⧉ ] with Hover Tooltip */}
-            {'pictureInPictureEnabled' in document && (
+            {/* 2. Standalone Picture-in-Picture [ ⧉ ] with Hover Tooltip (Desktop Only) */}
+            {'pictureInPictureEnabled' in document && !isMobile && (
               <button
                 type="button"
-                className={`chronos-hw-btn${pipActive ? ' active' : ''}`}
+                className={`chronos-hw-btn chronos-btn-pip${pipActive ? ' active' : ''}`}
                 onClick={togglePiP}
                 aria-label={pipActive ? 'Exit Picture-in-Picture' : 'Enter Picture-in-Picture'}
                 style={{ position: 'relative' }}
@@ -1621,7 +1625,7 @@ function ChronosSkinInternal({
             )}
 
             {/* 3. Settings Menu [SETTINGS] with Secondary Hierarchical Sub-menus */}
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: isMobile ? 'static' : 'relative' }}>
               <button
                 ref={cfgBtnRef}
                 type="button"

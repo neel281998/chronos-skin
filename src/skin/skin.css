@@ -1154,6 +1154,15 @@
   to { opacity: 1; transform: scale(1); }
 }
 
+.chronos-btn-seek-10 {
+  min-width: 38px;
+  width: 38px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ── Compact / Tablet Breakpoint (640px to 900px Safe) ── */
 .chronos-player.is-compact .hide-compact,
 .chronos-player.is-compact .chronos-btn-seek-10 {
@@ -1329,7 +1338,7 @@
   display: none;
 }
 
-/* Mobile Settings Bottom-Sheet Drawer */
+/* Mobile Settings Bottom-Sheet Drawer (Clean Modern Sheet) */
 .chronos-player.is-mobile .chronos-popover {
   position: absolute !important;
   bottom: 0 !important;
@@ -1340,15 +1349,31 @@
   min-width: 0 !important;
   max-height: 85% !important;
   overflow-y: auto !important;
-  border-radius: 12px 12px 0 0 !important;
+  border-radius: 14px 14px 0 0 !important;
   border: none !important;
   border-top: 1px solid rgba(255, 90, 31, 0.5) !important;
   background: rgba(14, 14, 12, 0.98) !important;
-  backdrop-filter: blur(12px) !important;
-  -webkit-backdrop-filter: blur(12px) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
   box-shadow: 0 -12px 36px rgba(0, 0, 0, 0.95) !important;
-  padding: 12px 14px 16px !important;
+  padding: 12px 14px 20px !important;
   z-index: 60 !important;
+  animation: chronos-slide-up 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+@keyframes chronos-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.chronos-player.is-mobile .chronos-popover-item {
+  min-height: 42px;
+  padding: 10px 12px;
+  font-size: 12px;
 }
 
 /* ── Viewport Mobile Responsiveness (640px & 375px Safe) ── */
